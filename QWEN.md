@@ -1,6 +1,6 @@
 # T-Shirt Factory MAS (Multi-Agent System)
 
-A Python multi-agent simulation of an automated T-shirt customization workshop. The system orchestrates orders through a production pipeline using **LangChain + Ollama** for three distinct LLM-driven decisions: scheduling, pipeline routing, and quality control. Orchestration is handled by **LangGraph** with **PostgresSaver** for checkpointing — the simulation can pause and resume across restarts.
+A Python multi-agent simulation of an automated T-shirt customization workshop. The system orchestrates orders through a production pipeline using **LangChain + Ollama** for six distinct LLM-driven decisions: scheduling, pipeline routing, quality control, printer configuration, heat press tuning, and packaging configuration. Orchestration is handled by **LangGraph** with **PostgresSaver** for checkpointing — the simulation can pause and resume across restarts.
 
 ## Tech Stack
 
@@ -39,7 +39,10 @@ src/
 ├── llm/
 │   ├── scheduler_chain.py   # LangChain prompt + structured output for scheduling
 │   ├── routing_chain.py     # LLM-driven pipeline routing per order
-│   └── qc_chain.py          # LLM-driven quality inspection decisions
+│   ├── qc_chain.py          # LLM-driven quality inspection decisions
+│   ├── printer_chain.py     # LLM-driven printer configuration per design
+│   ├── heat_press_chain.py  # LLM-driven heat press configuration per design
+│   └── packaging_chain.py   # LLM-driven packaging configuration per design
 └── models/
     ├── order.py             # Order model + DESIGN_DETAILS catalogue
     ├── messages.py          # AgentMessage model (sender, receiver, type, payload)
@@ -56,7 +59,7 @@ src/
 - **LangGraph StateGraph** (`graph/builder.py`): Replaces the hand-rolled while-loop. Two nodes — `plan` (LLM scheduling) and `process_order` (pipeline execution) — with conditional edges that route based on pipeline outcomes (completed, failed, rejected, rework). The graph is compiled with `PostgresSaver` for checkpointing.
 - **SimulationState** (`graph/state.py`): Single-source-of-truth Pydantic model holding all order collections (pending, in_progress, completed, rejected), the processing queue, counters, and flags. Every field is checkpointed by PostgresSaver, enabling pause/resume across restarts.
 - **PostgresSaver**: Checkpoints graph state to PostgreSQL after each node execution. The checkpoint backend is swappable — same graph definition works with SqliteSaver (dev) or AsyncPostgresSaver (production web app).
-- **MessageBus** (`bus.py`): Central pub/sub for inter-agent communication. Agents register handlers, send messages, and call `dispatch()` to deliver queued messages. Still used within pipeline nodes for agent-to-agent signaling.
+- **MessageBus** (`bus.py`): Central pub/sub for inter-agent communication. Agents register handlers, send structured `AgentMessage` objects, and `dispatch()` delivers them. **Dispatch returns a dict of non-None handler responses**, enabling agent-driven state changes: the scheduler returns a `ScheduleResponse` on `equipment_failure`, and the QC agent adjusts internal strictness on `station_history`. The caller (graph node) reads these responses to update state.
 - **Agents**: Each wraps an equipment simulator. `SchedulerAgent` is now a thin wrapper — its `SchedulerChain` is passed to graph nodes via `configurable`. Station agents (printer, heat_press, QC, packaging) are invoked from `process_order_pipeline()`.
 - **Equipment**: Simulates processing with `time.sleep()` and random failure probabilities (Printer, HeatPress, Packaging). QualityStation simulates inspection time only; the actual verdict comes from the QC LLM.
 - **Pipeline** (`graph/pipeline.py`): Stateless — all dependencies are passed as parameters. LLM-driven routing decides which stations are required per order based on design description. Not all orders go through all stations.
@@ -73,13 +76,16 @@ START → plan_node ──→ process_order_node ──→ [conditional]
                               END (queue empty)
 ```
 
-### Three LLM Roles
+### Six LLM Roles
 
 | LLM | Purpose | When called | Output |
 |---|---|---|---|
 | **Scheduling** | Orders pending orders by priority/urgency | Initial plan + every failure/rejection/rework | `ScheduleResponse` — ordered list of order IDs |
 | **Routing** | Decides which pipeline stations an order needs | Once per order at start of processing | `RoutingDecision` — ordered `StationRoute` list with required flags + notes |
-| **Quality Control** | Inspects finished shirts instead of random rejection | During QC stage for each order | `QualityDecision` — pass / rework (with instructions) / fail + defect severity |
+| **Printer** | Configures print temperature, ink saturation, passes, color profile per design | Once per order at printer stage | `PrinterDecision` — modulates failure probability by ±15% |
+| **Heat Press** | Configures temperature, dwell time, pressure, multi-pass per design | Once per order at heat press stage | `HeatPressDecision` — modulates failure probability by ±18% |
+| **Quality Control** | Inspects finished shirts; strictness adjusted by station history via message | During QC stage for each order | `QualityDecision` — pass / rework (with instructions) / fail + defect severity |
+| **Packaging** | Configures box type, fold method, extras based on design and priority | Once per order at packaging stage | `PackagingDecision` — modulates failure probability by ±15% |
 
 ## Configuration
 
@@ -141,7 +147,7 @@ No test suite exists yet. To add tests:
 - Package is built with `hatchling`, configured for individual packages under `src/`.
 - Logging: `logging.getLogger(__name__)` pattern throughout. Logs written to `logs/app.log` (DEBUG) and stdout (INFO).
 - Data models use `pydantic.BaseModel` with type annotations.
-- Agents follow a consistent pattern: `__init__(equipment)`, `process(order_id) → dict`, `handle_message(msg)`, optional `_send()` helper. SchedulerAgent is the exception — a thin wrapper since state lives in the LangGraph graph.
+- Agents follow a consistent pattern: `__init__(equipment)`, `process(order_id) → dict`, `handle_message(msg) → optional response`, optional `_send()` helper. SchedulerAgent returns a `ScheduleResponse` on `equipment_failure`; QualityControlAgent adjusts `inspection_strictness` on `station_history`. SchedulerAgent's state lives in the LangGraph graph.
 - Equipment follows: `__init__(name, failure_probability)`, `process(order_id) → dict`, `reset()`. QualityStation is the exception — `inspect(order_id) → float` since the verdict comes from the LLM.
 - Graph nodes follow: `node_name(state: SimulationState, config: RunnableConfig) → dict[str, Any]`. Dependencies (agents, equipment, chains, bus) are passed via `config["configurable"]`.
 - Pipeline (`graph/pipeline.py`): Stateless function — all dependencies are parameters. Returns an outcome string.

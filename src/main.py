@@ -77,7 +77,7 @@ def main() -> None:
     settings = Settings()
 
     logger.info("=" * 60)
-    logger.info("TSHIRT MAS - Multi-Agent System (LangGraph)")
+    logger.info("TSHIRT MAS - Sistem Multi-Agent (LangGraph)")
     logger.info("=" * 60)
 
     # --- Create message bus ---
@@ -92,10 +92,10 @@ def main() -> None:
     orders = generate_orders(10, urgent_ratio=0.3)
 
     print("\n" + "=" * 60)
-    print("  T-SHIRT FACTORY MULTI-AGENT SYSTEM")
-    print("  Powered by LangGraph + Ollama")
+    print("  FABRICA DE TRICOURI - SISTEM MULTI-AGENT")
+    print("  Bazat pe LangGraph + Ollama")
     print("=" * 60)
-    print(f"\n  Generated {len(orders)} orders:")
+    print(f"\n  S-au generat {len(orders)} comenzi:")
     for o in orders:
         tag = "⚡ URGENT" if o.priority == "urgent" else "   normal"
         print(f"    {o.id}  {tag}  [{o.design_name}]")
@@ -126,7 +126,7 @@ def main() -> None:
 
         # --- Run the simulation ---
         print("-" * 60)
-        print("  Starting pipeline execution...")
+        print("  Pornire execuție procesare...")
         print(f"  Thread: {config['configurable']['thread_id']}")
         print("-" * 60)
         print()
@@ -136,24 +136,24 @@ def main() -> None:
 
     # --- Statistics ---
     print("\n" + "=" * 60)
-    print("  SIMULATION COMPLETE")
+    print("  SIMULARE COMPLETĂ")
     print("=" * 60)
 
     completed = len(final_state.completed_orders)
     pending = len(final_state.pending_orders)
     total = len(orders)
 
-    print(f"\n  📊 FINAL STATISTICS")
+    print(f"\n  📊 STATISTICI FINALE")
     print(f"  {'─' * 40}")
-    print(f"  Total orders:           {total}")
-    print(f"  Completed:              {completed}")
-    print(f"  Still pending:          {pending}")
-    print(f"  In progress:            {len(final_state.in_progress)}")
-    print(f"  Completion rate:        {completed / total * 100:.1f}%")
-    print(f"  LLM re-plans:           {final_state.re_plan_count}")
-    print(f"  Iterations:             {final_state.iteration}")
-    print(f"  Heat press failures:    "
-          f"{1 if final_state.heat_press_failure_triggered else 0} (forced)")
+    print(f"  Total comenzi:          {total}")
+    print(f"  Finalizate:              {completed}")
+    print(f"  În așteptare:            {pending}")
+    print(f"  În procesare:            {len(final_state.in_progress)}")
+    print(f"  Rată de finalizare:       {completed / total * 100:.1f}%")
+    print(f"  Re-planificări LLM:       {final_state.re_plan_count}")
+    print(f"  Iterații:                 {final_state.iteration}")
+    print(f"  Defecte presă termică:    "
+          f"{1 if final_state.heat_press_failure_triggered else 0} (forțat)")
 
     urgent_total = sum(1 for o in orders if o.priority == "urgent")
     urgent_completed = sum(
@@ -161,10 +161,10 @@ def main() -> None:
         for oid, o in final_state.completed_orders.items()
         if o.priority == "urgent"
     )
-    print(f"  Urgent orders:          {urgent_completed}/{urgent_total} completed")
+    print(f"  Comenzi urgente:         {urgent_completed}/{urgent_total} finalizate")
 
     # Per-order status — reconstruct from graph state
-    print(f"\n  📋 ORDER STATUS:")
+    print(f"\n  📋 STATUS COMENZI:")
     for o in orders:
         if o.id in final_state.completed_orders:
             status = "completed"
@@ -182,7 +182,7 @@ def main() -> None:
         }.get(status, "❓")
         print(f"    {status_icon} {o.id} [{o.priority:6s}] {status}")
 
-    print(f"\n  📝 Full logs: {LOG_DIR / 'app.log'}")
+    print(f"\n  📝 Log complet: {LOG_DIR / 'app.log'}")
     print("=" * 60)
 
 

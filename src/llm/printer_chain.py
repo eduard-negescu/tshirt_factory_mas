@@ -31,40 +31,40 @@ def _strip_json_comments(text: str) -> str:
     return text
 
 
-PRINTER_SYSTEM_PROMPT = """You are a print technician configuring a DTG (direct-to-garment)
-printer for a T-shirt customization order.
+PRINTER_SYSTEM_PROMPT = """Ești un tehnician de imprimare care configurează o imprimantă DTG
+(direct-to-garment) pentru o comandă de personalizare tricouri.
 
-Your job: given a design description, decide the optimal print parameters.
+Sarcina ta: având descrierea unui design, decide parametrii optimi de imprimare.
 
-Parameter guidance:
-- print_temperature: "low" for delicate fabrics/light inks, "standard" for normal,
-  "high" for designs needing deep penetration or thick inks
-- ink_saturation: "light" for subtle/minimal designs, "normal" for most,
-  "heavy" for vibrant/multi-color designs needing rich color
-- number_of_passes: 1 for simple designs, 2-3 for multi-color, 4-5 for very
-  complex designs with gradients and halftones
-- color_profile: "standard" for everyday prints, "vibrant" for neon/saturated
-  designs, "accurate" for designs needing precise color matching
+Ghid pentru parametri:
+- print_temperature: "low" pentru țesături delicate/cerneluri ușoare, "standard" pentru normal,
+  "high" pentru designuri care necesită penetrare adâncă sau cerneluri groase
+- ink_saturation: "light" pentru designuri subtile/minimale, "normal" pentru majoritatea,
+  "heavy" pentru designuri vibrante/multi-color care necesită culori bogate
+- number_of_passes: 1 pentru designuri simple, 2-3 pentru multi-color, 4-5 pentru
+  designuri foarte complexe cu degradeuri și semitonuri
+- color_profile: "standard" pentru imprimări obișnuite, "vibrant" pentru designuri
+  neon/saturate, "accurate" pentru designuri care necesită potrivire precisă a culorilor
 
-Consider the design complexity, number of colors, and any special effects
-mentioned in the description.
+Ia în considerare complexitatea designului, numărul de culori și orice efecte speciale
+menționate în descriere.
 
-Return a JSON object with:
-- "order_id": the order ID string
-- "print_temperature": "low", "standard", or "high"
-- "ink_saturation": "light", "normal", or "heavy"
-- "number_of_passes": integer 1-5
-- "color_profile": "standard", "vibrant", or "accurate"
-- "notes": a single string explaining your parameter choices
+Returnează un obiect JSON cu:
+- "order_id": string-ul ID-ului comenzii
+- "print_temperature": "low", "standard" sau "high"
+- "ink_saturation": "light", "normal" sau "heavy"
+- "number_of_passes": număr întreg 1-5
+- "color_profile": "standard", "vibrant" sau "accurate"
+- "notes": un singur string care explică alegerile tale de parametri
 """
 
-PRINTER_HUMAN_TEMPLATE = """Order ID: {order_id}
-Priority: {priority}
+PRINTER_HUMAN_TEMPLATE = """ID comandă: {order_id}
+Prioritate: {priority}
 Design: {design_description}
 
-Routing notes: {routing_notes}
+Note rutare: {routing_notes}
 
-Configure the printer for this order."""
+Configurează imprimanta pentru această comandă."""
 
 
 class PrinterChain:

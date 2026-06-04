@@ -24,10 +24,19 @@ class MessageBus:
             message.payload,
         )
 
-    def dispatch(self) -> None:
+    def dispatch(self) -> dict[str, list]:
+        """Deliver queued messages to registered handlers.
+
+        Returns a dict mapping receiver names to lists of non-None
+        return values from their handlers. Callers can inspect this
+        for agent-driven state changes (e.g. scheduler re-plan).
+        """
+        responses: dict[str, list] = {}
         for msg in self.messages:
             if msg.receiver in self.handlers:
-                self.handlers[msg.receiver](msg)
+                result = self.handlers[msg.receiver](msg)
+                if result is not None:
+                    responses.setdefault(msg.receiver, []).append(result)
             else:
                 logger.warning(
                     "MessageBus: no handler for '%s' (msg from %s)",
@@ -35,6 +44,7 @@ class MessageBus:
                     msg.sender,
                 )
         self.messages.clear()
+        return responses
 
     def dispatch_all(self, max_rounds: int = 10) -> None:
         for _ in range(max_rounds):

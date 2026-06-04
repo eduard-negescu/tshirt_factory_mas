@@ -1,6 +1,6 @@
 # T-Shirt Factory MAS
 
-Multi-Agent System simulating an automated T-shirt customization workshop. Orchestrates orders through a production pipeline using **LangChain + Ollama** for three LLM-driven decisions: scheduling, pipeline routing, and quality control. Orchestration is handled by **LangGraph** with **PostgresSaver** for checkpointing — the simulation can pause and resume across restarts.
+Multi-Agent System simulating an automated T-shirt customization workshop. Orchestrates orders through a production pipeline using **LangChain + Ollama** for six LLM-driven decisions: scheduling, pipeline routing, quality control, printer configuration, heat press tuning, and packaging configuration. Orchestration is handled by **LangGraph** with **PostgresSaver** for checkpointing — the simulation can pause and resume across restarts.
 
 ## Architecture
 
@@ -25,17 +25,20 @@ Multi-Agent System simulating an automated T-shirt customization workshop. Orche
 
 - **LangGraph StateGraph** — replaces the hand-rolled while-loop. Two nodes (`plan`, `process_order`) with conditional edges route orders through the pipeline based on outcomes (completed, failed, rejected, rework).
 - **PostgresSaver** — checkpoints the full `SimulationState` to PostgreSQL after each node. Enables pause/resume across restarts. Backend is swappable (SqliteSaver for dev, PostgresSaver for production).
-- **MessageBus** — central pub/sub for inter-agent communication within pipeline nodes.
+- **MessageBus** — central pub/sub for inter-agent communication. Agents send structured JSON messages and react to incoming ones. The scheduler triggers re-plans on `equipment_failure` messages; the QC agent adjusts its inspection strictness on `station_history` messages. Dispatch returns handler responses so callers can act on agent-driven decisions.
 - **Equipment Agents** — each wraps an equipment simulator (`Printer`, `HeatPress`, `QualityStation`, `PackagingStation`). Printer, HeatPress, and Packaging have configurable random failure probabilities; QualityStation simulates inspection time while the actual pass/fail/rework verdict comes from the QC LLM.
 - **Equipment** — simulates processing time with `time.sleep()` and random failures. Each station has `process(order_id) → dict` and `reset()`.
 
-### Three LLM Roles
+### Six LLM Roles
 
 | LLM | Purpose | Output |
 |---|---|---|
 | **Scheduling** | Orders pending orders by priority/urgency | `ScheduleResponse` — ordered list of order IDs |
 | **Routing** | Decides which pipeline stations each order needs based on its design | `RoutingDecision` — ordered `StationRoute` list with required flags |
-| **Quality Control** | Inspects shirts with design-specific reasoning (replaces random rejection) | `QualityDecision` — pass / rework (with instructions) / fail + severity |
+| **Printer** | Configures print temperature, ink saturation, passes, and color profile per design | `PrinterDecision` — modulates failure probability by ±15% |
+| **Heat Press** | Configures temperature, dwell time, pressure, and multi-pass per design | `HeatPressDecision` — modulates failure probability by ±18% |
+| **Quality Control** | Inspects shirts with design-specific reasoning, strictness adjusted by station history | `QualityDecision` — pass / rework (with instructions) / fail + severity |
+| **Packaging** | Configures box type, fold method, and extras based on design and priority | `PackagingDecision` — modulates failure probability by ±15% |
 
 ### Pipeline — LLM-Driven per Order
 
@@ -46,6 +49,13 @@ Not all orders go through all stations. The routing LLM reads the order's design
 - **Special effects** (e.g., "retro" — crackle texture) → heat_press with special settings
 
 QC is similarly design-aware: the QC LLM is more lenient on complex designs and urgent orders, and provides specific rework instructions (e.g., "recalibrate printer registration to fix ~3mm misalignment on petal edges").
+
+### Message-Driven Coordination
+
+The MessageBus is not just a logging sidecar — it drives real agent behavior:
+
+- **Scheduler re-planning**: When equipment fails, the graph node sends an enriched `equipment_failure` message with full equipment status and pending orders. The scheduler's handler calls its LLM chain and returns a new `ScheduleResponse`, which the graph node uses as the updated processing queue — skipping a separate `plan_node` invocation.
+- **QC strictness adjustment**: Before inspecting each order, the pipeline sends a `station_history` message to the QC agent detailing which stations ran and their parameters. The QC agent adjusts its inspection strictness (`high`, `elevated`, `normal`) based on station count and risky configurations (e.g., heavy ink + high temp). This strictness is injected into the QC LLM prompt, biasing the verdict.
 
 ### Rework Protection
 
@@ -145,7 +155,10 @@ src/
 ├── llm/
 │   ├── scheduler_chain.py   # LangChain prompt + structured output for scheduling
 │   ├── routing_chain.py     # LLM-driven pipeline routing per order
-│   └── qc_chain.py          # LLM-driven quality inspection decisions
+│   ├── qc_chain.py          # LLM-driven quality inspection decisions
+│   ├── printer_chain.py     # LLM-driven printer configuration per design
+│   ├── heat_press_chain.py  # LLM-driven heat press configuration per design
+│   └── packaging_chain.py   # LLM-driven packaging configuration per design
 └── models/
     ├── order.py             # Order model + DESIGN_DETAILS catalogue
     ├── messages.py          # AgentMessage model
@@ -177,7 +190,7 @@ Seven designs with rich natural-language descriptions drive the LLM's routing an
 - Python ≥ 3.12, formatted with the project's default tooling.
 - Logging via `logging.getLogger(__name__)` — DEBUG → `logs/app.log`, INFO → stdout.
 - Data models use `pydantic.BaseModel` with type annotations.
-- Agents follow: `__init__(equipment)`, `process(order_id) → dict`, `handle_message(msg)`.
+- Agents follow: `__init__(equipment)`, `process(order_id) → dict`, `handle_message(msg) → optional response`. Scheduler's handler returns a `ScheduleResponse` on `equipment_failure`; QC agent's handler adjusts internal state on `station_history`.
 - Equipment follows: `__init__(name, failure_probability)`, `process(order_id) → dict`, `reset()`. QualityStation uses `inspect(order_id) → float` (verdict from LLM).
 - LLM chains follow the same pattern: system prompt, human template, `_strip_json_comments`, `PydanticOutputParser`, custom error class.
 

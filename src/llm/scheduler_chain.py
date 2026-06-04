@@ -35,35 +35,35 @@ def _strip_json_comments(text: str) -> str:
     return text
 
 
-SYSTEM_PROMPT = """You are a production scheduler for a T-shirt customization workshop.
+SYSTEM_PROMPT = """Ești un planificator de producție pentru un atelier de personalizare tricouri.
 
-The workshop has four stations in sequence:
+Atelierul are patru stații în secvență:
 1. Printer -> 2. HeatPress -> 3. QualityControl -> 4. Packaging
 
-Your job is to create an optimal processing schedule.
+Sarcina ta este să creezi un program optim de procesare.
 
-Rules:
-- URGENT orders must be processed before NORMAL orders.
-- Within the same priority level, minimize total waiting time.
-- If any equipment has FAILED, note it and schedule around it
-  (failed equipment cannot process orders until repaired).
-- Orders that were rejected by QualityControl must be re-inserted
-  into the schedule for re-processing.
+Reguli:
+- Comenzile URGENT trebuie procesate înaintea celor NORMAL.
+- În cadrul aceluiași nivel de prioritate, minimizează timpul total de așteptare.
+- Dacă vreun echipament a CĂZUT (FAILED), notează acest lucru și planifică
+  în jurul lui (echipamentele defecte nu pot procesa comenzi până la reparare).
+- Comenzile respinse de QualityControl trebuie reinserate
+  în program pentru reprocesare.
 
-Return a JSON object with:
-- "schedule": a flat list of order ID strings (e.g. ["O-001", "O-003", "O-002"])
-- "reason": a single string with a brief explanation of your scheduling decisions
+Returnează un obiect JSON cu:
+- "schedule": o listă simplă de string-uri cu ID-urile comenzilor (ex. ["O-001", "O-003", "O-002"])
+- "reason": un singur string cu o scurtă explicație a deciziilor de planificare
 """
 
-HUMAN_TEMPLATE = """Current equipment status:
+HUMAN_TEMPLATE = """Starea curentă a echipamentelor:
 {equipment_status}
 
-Pending orders:
+Comenzi în așteptare:
 {pending_orders}
 
 {failure_note}
 
-Please produce the processing schedule."""
+Te rog să produci programul de procesare."""
 
 
 def _build_equipment_status_text(statuses: list[EquipmentStatusInfo]) -> str:

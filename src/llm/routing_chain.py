@@ -33,44 +33,44 @@ def _strip_json_comments(text: str) -> str:
     return text
 
 
-ROUTING_SYSTEM_PROMPT = """You are a production engineer determining the optimal pipeline
-route for a T-shirt customization order.
+ROUTING_SYSTEM_PROMPT = """Ești un inginer de producție care determină ruta optimă
+de procesare pentru o comandă de personalizare tricouri.
 
-The workshop has four stations:
-1. printer — prints the design onto the shirt
-2. heat_press — cures/fixes the print (required for multi-color, glitter, or special finishes)
-3. quality_control — inspects the finished shirt for defects
-4. packaging — wraps the shirt for shipping
+Atelierul are patru stații:
+1. printer — imprimă designul pe tricou
+2. heat_press — fixează/întărește imprimarea (necesar pentru multi-color, glitter sau finisaje speciale)
+3. quality_control — inspectează tricoul finisat pentru defecte
+4. packaging — împachetează tricoul pentru livrare
 
-Your job: given an order's design description and current equipment status,
-decide which stations the order MUST go through and in what order.
+Sarcina ta: având descrierea designului unei comenzi și starea curentă a echipamentelor,
+decide prin care stații TREBUIE să treacă comanda și în ce ordine.
 
-Routing rules:
-- ALL orders must go through packaging.
-- Simple single-color designs (like "minimal", basic text) can skip heat_press
-  if the print doesn't need curing and skip quality_control if risk is low.
-- Multi-color designs always need printer, heat_press, and quality_control.
-- Designs needing special effects (glitter, crackle texture, vintage finish)
-  MUST go through heat_press with special settings noted.
-- Complex designs (5+ colors, gradients, halftones) MUST go through quality_control.
-- If a station is FAILED, mark it as required=false and explain why in notes
-  (the order will be re-routed when the station is repaired).
-- The route list must be in processing order.
+Reguli de rutare:
+- TOATE comenzile trebuie să treacă prin packaging.
+- Designurile simple cu o singură culoare (precum "minimal", text de bază) pot sări peste heat_press
+  dacă imprimarea nu necesită întărire și peste quality_control dacă riscul este scăzut.
+- Designurile multi-color necesită întotdeauna printer, heat_press și quality_control.
+- Designurile care necesită efecte speciale (glitter, textură crackle, finisaj vintage)
+  TREBUIE să treacă prin heat_press cu setări speciale notate.
+- Designurile complexe (5+ culori, degradeuri, semitonuri) TREBUIE să treacă prin quality_control.
+- Dacă o stație este CĂZUTĂ (FAILED), marcheaz-o ca required=false și explică de ce în notes
+  (comanda va fi re-rutată când stația este reparată).
+- Lista de rute trebuie să fie în ordinea de procesare.
 
-Return a JSON object with:
-- "order_id": the order ID string
-- "route": array of {{ "station": "...", "required": true/false, "notes": "..." }}
-- "reason": brief explanation of the routing decision
+Returnează un obiect JSON cu:
+- "order_id": string-ul ID-ului comenzii
+- "route": array de {{ "station": "...", "required": true/false, "notes": "..." }}
+- "reason": scurtă explicație a deciziei de rutare
 """
 
-ROUTING_HUMAN_TEMPLATE = """Order ID: {order_id}
+ROUTING_HUMAN_TEMPLATE = """ID comandă: {order_id}
 Design: {design_description}
-Priority: {priority}
+Prioritate: {priority}
 
-Current equipment status:
+Starea curentă a echipamentelor:
 {equipment_status}
 
-Decide the pipeline route for this order."""
+Decide ruta de procesare pentru această comandă."""
 
 
 class RoutingChain:

@@ -31,44 +31,44 @@ def _strip_json_comments(text: str) -> str:
     return text
 
 
-HEAT_PRESS_SYSTEM_PROMPT = """You are a heat press technician configuring a curing press
-for a T-shirt customization order.
+HEAT_PRESS_SYSTEM_PROMPT = """Ești un tehnician de presă termică care configurează o presă
+de întărire pentru o comandă de personalizare tricouri.
 
-Your job: given a design description, decide the optimal heat press parameters.
+Sarcina ta: având descrierea unui design, decide parametrii optimi pentru presa termică.
 
-Parameter guidance:
-- temperature: "low" for vintage/distressed finishes (lower temp, gentler cure),
-  "medium" for standard prints, "high" for glitter, thick ink, or multi-color
-  designs needing thorough curing
-- dwell_time: "short" for light/single-color prints, "standard" for most designs,
-  "extended" for complex multi-color or special-effect designs (crackle, glitter)
-- pressure: "light" for delicate fabrics or raised prints, "medium" for standard,
-  "firm" for thick multi-layer prints needing strong adhesion
-- multi_pass: true for designs with special finishes (glitter, crackle, puff ink)
-  or very thick prints; false for standard single-pass curing
+Ghid pentru parametri:
+- temperature: "low" pentru finisaje vintage/uzate (temperatură mai joasă, întărire mai blândă),
+  "medium" pentru imprimări standard, "high" pentru glitter, cerneală groasă sau
+  designuri multi-color care necesită întărire completă
+- dwell_time: "short" pentru imprimări ușoare/monocrome, "standard" pentru majoritatea designurilor,
+  "extended" pentru designuri complexe multi-color sau cu efecte speciale (crackle, glitter)
+- pressure: "light" pentru țesături delicate sau imprimări în relief, "medium" pentru standard,
+  "firm" pentru imprimări groase multi-strat care necesită aderență puternică
+- multi_pass: true pentru designuri cu finisaje speciale (glitter, crackle, cerneală pufoasă)
+  sau imprimări foarte groase; false pentru întărire standard într-o singură trecere
 
-Special cases from the design descriptions:
-- "vintage distressed" / "crackle texture" → low temperature + extended dwell
-- "glitter heat-transfer overlay" → high temperature + multi_pass
-- "neon gradients" / "extended curing time" → extended dwell
-- Simple single-color → standard, single pass
+Cazuri speciale din descrierile designurilor:
+- "vintage distressed" / "crackle texture" → temperatură low + dwell extins
+- "glitter heat-transfer overlay" → temperatură high + multi_pass
+- "neon gradients" / "extended curing time" → dwell extins
+- Design simplu monocrom → standard, trecere unică
 
-Return a JSON object with:
-- "order_id": the order ID string
-- "temperature": "low", "medium", or "high"
-- "dwell_time": "short", "standard", or "extended"
-- "pressure": "light", "medium", or "firm"
-- "multi_pass": true or false
-- "notes": a single string explaining your parameter choices
+Returnează un obiect JSON cu:
+- "order_id": string-ul ID-ului comenzii
+- "temperature": "low", "medium" sau "high"
+- "dwell_time": "short", "standard" sau "extended"
+- "pressure": "light", "medium" sau "firm"
+- "multi_pass": true sau false
+- "notes": un singur string care explică alegerile tale de parametri
 """
 
-HEAT_PRESS_HUMAN_TEMPLATE = """Order ID: {order_id}
-Priority: {priority}
+HEAT_PRESS_HUMAN_TEMPLATE = """ID comandă: {order_id}
+Prioritate: {priority}
 Design: {design_description}
 
-Routing notes: {routing_notes}
+Note rutare: {routing_notes}
 
-Configure the heat press for this order."""
+Configurează presa termică pentru această comandă."""
 
 
 class HeatPressChain:

@@ -89,9 +89,9 @@ def plan_node(state: SimulationState, config: RunnableConfig) -> dict[str, Any]:
 
         re_plan_count = state.re_plan_count + 1
 
-        print(f"\n  🔄 {'Initial' if re_plan_count == 1 else 'Re-'}plan "
+        print(f"\n  🔄 {'Plan' if re_plan_count == 1 else 'Re-plan'} inițial "
               f"#{re_plan_count}: {response.schedule}")
-        print(f"     Reason: {response.reason}\n")
+        print(f"     Motiv: {response.reason}\n")
 
         return {
             "queue": list(response.schedule),
@@ -125,13 +125,19 @@ def process_order_node(
         order_id = state.queue[0]
         set_trace_id(f"[replan-{order_id}]")
         try:
-            print("\n  🔥🔥🔥 FORCED HEAT PRESS FAILURE TRIGGERED! 🔥🔥🔥\n")
-            logger.warning("!!! FORCED HEAT PRESS FAILURE !!!")
+            print("\n  🔥🔥🔥 DEFECT FORȚAT LA PRESA TERMICĂ! 🔥🔥🔥\n")
+            logger.warning("!!! DEFECT FORȚAT LA PRESA TERMICĂ !!!")
 
             heat_press_eq = equipment["heat_press"]
             heat_press_eq.status = "failed"
 
-            # Send failure message
+            # Build context for scheduler re-plan
+            equipment_statuses = _build_equipment_statuses(config)
+            pending = _build_pending_list(
+                state.pending_orders, state.rejected_orders
+            )
+
+            # Send enriched failure message so scheduler can re-plan
             bus.send(
                 AgentMessage(
                     sender="simulation",
@@ -141,38 +147,48 @@ def process_order_node(
                         "equipment": "heat_press",
                         "order_id": order_id,
                         "reason": "forced_failure_for_demo",
+                        "equipment_statuses": [
+                            es.model_dump() for es in equipment_statuses
+                        ],
+                        "pending_orders": [
+                            p.model_dump() for p in pending
+                        ],
                     },
                 )
             )
-            bus.dispatch()
+            responses = bus.dispatch()
 
-            # Re-plan with the failure
-            chain: SchedulerChain = config["configurable"]["scheduler_chain"]
-            equipment_statuses = _build_equipment_statuses(config)
-            pending = _build_pending_list(
-                state.pending_orders, state.rejected_orders
-            )
-            response = chain.invoke(equipment_statuses, pending, "heat_press")
+            # Extract scheduler's re-plan from message response
+            scheduler_responses = responses.get("scheduler", [])
+            schedule_response = scheduler_responses[-1] if scheduler_responses else None
+
+            if schedule_response is not None:
+                # Put current order at the front, deduplicate the rest
+                new_queue = [order_id] + [
+                    oid for oid in schedule_response.schedule
+                    if oid != order_id
+                ]
+                reason = schedule_response.reason
+            else:
+                # Fallback: keep queue as-is if scheduler didn't respond
+                logger.warning("Scheduler did not respond to equipment_failure")
+                new_queue = list(state.queue)
+                reason = "no scheduler response"
 
             # Repair after short delay
             time.sleep(0.5)
             heat_press_eq.reset()
-            logger.info("Heat press repaired")
-            print("  🔧 Heat press repaired\n")
+            logger.info("Presa termică reparată")
+            print("  🔧 Presa termică reparată\n")
 
-            # Rebuild queue: current order stays at front, rest from LLM schedule
-            new_queue = [order_id] + [
-                oid for oid in response.schedule if oid != order_id
-            ]
-
-            print(f"  🔄 Re-plan after failure #{state.re_plan_count + 1}: "
+            print(f"  🔄 Re-plan după defect #{state.re_plan_count + 1}: "
                   f"{new_queue}")
-            print(f"     Reason: {response.reason}\n")
+            print(f"     Motiv: {reason}\n")
 
             return {
                 "heat_press_failure_triggered": True,
                 "queue": new_queue,
-                "schedule_reason": response.reason,
+                "schedule_reason": reason,
                 "re_plan_count": state.re_plan_count + 1,
                 "pipeline_result": "",  # cleared — continue processing
             }
@@ -236,35 +252,138 @@ def process_order_node(
             result["completed_orders"] = new_completed
             result["in_progress"] = new_in_progress
             result["completed_count"] = completed_count
-            print(f"  ✅ {order_id} COMPLETED "
+            print(f"  ✅ {order_id} FINALIZATĂ "
                   f"({completed_count}/{len(state.all_orders)})")
 
         elif outcome == "failed_printer":
-            equipment["printer"].reset()
             order.status = "pending"
             new_pending[order_id] = order
             new_in_progress.pop(order_id, None)
             result["pending_orders"] = new_pending
             result["in_progress"] = new_in_progress
-            print(f"  ❌ {order_id} FAILED at Printer - re-queued")
+            print(f"  ❌ {order_id} A EȘUAT la Imprimantă - readăugată în coadă")
+
+            # Trigger scheduler re-plan via message BEFORE resetting equipment
+            # so the scheduler sees the actual failure state
+            failed_eq_statuses = _build_equipment_statuses(config)
+            pending = _build_pending_list(
+                result["pending_orders"], new_rejected
+            )
+            bus.send(
+                AgentMessage(
+                    sender="graph",
+                    receiver="scheduler",
+                    message_type="equipment_failure",
+                    payload={
+                        "equipment": "printer",
+                        "order_id": order_id,
+                        "equipment_statuses": [
+                            es.model_dump() for es in failed_eq_statuses
+                        ],
+                        "pending_orders": [
+                            p.model_dump() for p in pending
+                        ],
+                    },
+                )
+            )
+            responses = bus.dispatch()
+            sched_resp = responses.get("scheduler", [None])[-1]
+            if sched_resp is not None:
+                result["queue"] = [order_id] + [
+                    oid for oid in sched_resp.schedule if oid != order_id
+                ]
+                result["pipeline_result"] = ""  # skip re-plan node
+                result["schedule_reason"] = sched_resp.reason
+                print(f"     🔄 Scheduler re-plan: {result['queue']}")
+
+            # Reset equipment AFTER scheduler has seen the failure
+            equipment["printer"].reset()
 
         elif outcome == "failed_heat_press":
-            equipment["heat_press"].reset()
             order.status = "pending"
             new_pending[order_id] = order
             new_in_progress.pop(order_id, None)
             result["pending_orders"] = new_pending
             result["in_progress"] = new_in_progress
-            print(f"  ❌ {order_id} FAILED at HeatPress - re-queued")
+            print(f"  ❌ {order_id} A EȘUAT la Presa Termică - readăugată în coadă")
+
+            # Trigger scheduler re-plan via message BEFORE resetting equipment
+            failed_eq_statuses = _build_equipment_statuses(config)
+            pending = _build_pending_list(
+                result["pending_orders"], new_rejected
+            )
+            bus.send(
+                AgentMessage(
+                    sender="graph",
+                    receiver="scheduler",
+                    message_type="equipment_failure",
+                    payload={
+                        "equipment": "heat_press",
+                        "order_id": order_id,
+                        "equipment_statuses": [
+                            es.model_dump() for es in failed_eq_statuses
+                        ],
+                        "pending_orders": [
+                            p.model_dump() for p in pending
+                        ],
+                    },
+                )
+            )
+            responses = bus.dispatch()
+            sched_resp = responses.get("scheduler", [None])[-1]
+            if sched_resp is not None:
+                result["queue"] = [order_id] + [
+                    oid for oid in sched_resp.schedule if oid != order_id
+                ]
+                result["pipeline_result"] = ""
+                result["schedule_reason"] = sched_resp.reason
+                print(f"     🔄 Scheduler re-plan: {result['queue']}")
+
+            # Reset equipment AFTER scheduler has seen the failure
+            equipment["heat_press"].reset()
 
         elif outcome == "failed_packaging":
-            equipment["packaging"].reset()
             order.status = "pending"
             new_pending[order_id] = order
             new_in_progress.pop(order_id, None)
             result["pending_orders"] = new_pending
             result["in_progress"] = new_in_progress
-            print(f"  ❌ {order_id} FAILED at Packaging - re-queued")
+            print(f"  ❌ {order_id} A EȘUAT la Ambalare - readăugată în coadă")
+
+            # Trigger scheduler re-plan via message BEFORE resetting equipment
+            failed_eq_statuses = _build_equipment_statuses(config)
+            pending = _build_pending_list(
+                result["pending_orders"], new_rejected
+            )
+            bus.send(
+                AgentMessage(
+                    sender="graph",
+                    receiver="scheduler",
+                    message_type="equipment_failure",
+                    payload={
+                        "equipment": "packaging",
+                        "order_id": order_id,
+                        "equipment_statuses": [
+                            es.model_dump() for es in failed_eq_statuses
+                        ],
+                        "pending_orders": [
+                            p.model_dump() for p in pending
+                        ],
+                    },
+                )
+            )
+            responses = bus.dispatch()
+            sched_resp = responses.get("scheduler", [None])[-1]
+            if sched_resp is not None:
+                result["queue"] = [order_id] + [
+                    oid for oid in sched_resp.schedule if oid != order_id
+                ]
+                result["pipeline_result"] = ""
+                result["schedule_reason"] = sched_resp.reason
+                print(f"     🔄 Scheduler re-plan: {result['queue']}")
+
+            # Reset equipment AFTER scheduler has seen the failure
+            equipment["packaging"].reset()
 
         elif outcome == "rejected_qc":
             order.status = "pending"
@@ -275,8 +394,8 @@ def process_order_node(
             result["pending_orders"] = new_pending
             result["in_progress"] = new_in_progress
             result["rejected_orders"] = new_rejected
-            print(f"  ❌ {order_id} FAILED QC - re-queued as urgent "
-                  f"(full reprint needed)")
+            print(f"  ❌ {order_id} RESPINSĂ la CQ - readăugată ca urgentă "
+                  f"(necesită reimprimare completă)")
 
         elif outcome == "rework_qc":
             order.rework_count += 1
@@ -292,16 +411,16 @@ def process_order_node(
                 completed_count = state.completed_count + 1
                 result["completed_orders"] = new_completed
                 result["completed_count"] = completed_count
-                print(f"  ✅ {order_id} FORCE-COMPLETED after "
-                      f"{order.rework_count} reworks "
+                print(f"  ✅ {order_id} FINALIZATĂ FORȚAT după "
+                      f"{order.rework_count} refaceri "
                       f"({completed_count}/{len(state.all_orders)})")
             else:
                 order.status = "pending"
                 new_pending[order_id] = order
                 result["pending_orders"] = new_pending
-                print(f"  🔧 {order_id} REWORK by QC "
-                      f"(attempt {order.rework_count}/{state.max_rework}) "
-                      f"- re-queued")
+                print(f"  🔧 {order_id} REFACERE cerută de CQ "
+                      f"(încercarea {order.rework_count}/{state.max_rework}) "
+                      f"- readăugată în coadă")
             result["in_progress"] = new_in_progress
 
         return result

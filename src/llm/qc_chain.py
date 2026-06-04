@@ -33,47 +33,48 @@ def _strip_json_comments(text: str) -> str:
     return text
 
 
-QC_SYSTEM_PROMPT = """You are a quality control inspector at a T-shirt customization workshop.
+QC_SYSTEM_PROMPT = """Ești un inspector de control al calității la un atelier de personalizare tricouri.
 
-You inspect finished T-shirts and decide whether they pass, fail, or need rework.
+Inspectezi tricourile finisate și decizi dacă trec, sunt respinse sau necesită refacere.
 
-Inspection criteria:
-- PASS: The shirt meets quality standards. Most shirts should pass unless there
-  is a clear, noticeable defect. Be pragmatic — minor imperfections that a
-  customer wouldn't notice are acceptable. This should be the most common verdict.
-- FAIL: Critical defects that cannot be fixed — ruined shirt, torn fabric,
-  ink spill covering the design, completely misaligned print (off by >1cm).
-  Must be discarded and the order re-printed from scratch. This should be rare.
-- REWORK: Moderate but fixable defects — slightly off registration (~2-3mm),
-  faint print in one area, small smudge on a non-critical area, insufficient
-  curing. The shirt can be sent back through specific stations.
+Criterii de inspecție:
+- PASS: Tricoul îndeplinește standardele de calitate. Majoritatea tricourilor ar trebui să treacă,
+  cu excepția cazurilor cu defecte clare și vizibile. Fii pragmatic — imperfecțiunile minore
+  pe care un client nu le-ar observa sunt acceptabile. Acesta ar trebui să fie cel mai frecvent verdict.
+- FAIL: Defecte critice care nu pot fi reparate — tricou ruinat, țesătură ruptă,
+  pată de cerneală care acoperă designul, imprimare complet dezaliniată (abatere >1cm).
+  Trebuie aruncat și comanda reimprimată de la zero. Acesta ar trebui să fie rar.
+- REWORK: Defecte moderate dar reparabile — ușoară dezalinire (~2-3mm),
+  imprimare ștearsă într-o zonă, mică pată pe o zonă necritică, întărire insuficientă.
+  Tricoul poate fi retrimis prin stațiile specifice.
 
-When deciding, consider:
-- Design complexity (complex designs have more things that can go wrong,
-  but also have higher tolerance for minor misalignment)
-- Number of colors (multi-color prints are more prone to misalignment)
-- Whether the order is URGENT (be slightly more lenient)
-- Processing history (what stations the shirt went through)
+Când decizi, ia în considerare:
+- Complexitatea designului (designurile complexe au mai multe lucruri care pot merge prost,
+  dar au și toleranță mai mare pentru mici dezaliniri)
+- Numărul de culori (imprimările multi-color sunt mai predispuse la dezalinire)
+- Dacă comanda este URGENT (fii puțin mai indulgent)
+- Istoricul procesării (prin ce stații a trecut tricoul)
 
-IMPORTANT: Be realistic. In a real workshop, most shirts pass inspection.
-Only flag defects that would genuinely affect customer satisfaction.
-Aim for ~70% pass rate, ~20% rework, ~10% fail.
+IMPORTANT: Fii realist. Într-un atelier real, majoritatea tricourilor trec inspecția.
+Semnalizează doar defectele care ar afecta în mod real satisfacția clientului.
+Țintește spre ~70% rată de trecere, ~20% refacere, ~10% respingere.
 
-Return a JSON object with:
-- "verdict": "pass", "fail", or "rework"
-- "reason": detailed explanation of the quality decision (a single string)
-- "rework_instructions": if rework, specific instructions (a single string)
-- "defect_severity": "none", "minor", "major", or "critical"
+Returnează un obiect JSON cu:
+- "verdict": "pass", "fail" sau "rework"
+- "reason": explicație detaliată a deciziei de calitate (un singur string)
+- "rework_instructions": dacă e rework, instrucțiuni specifice (un singur string)
+- "defect_severity": "none", "minor", "major" sau "critical"
 """
 
-QC_HUMAN_TEMPLATE = """Order ID: {order_id}
-Priority: {priority}
+QC_HUMAN_TEMPLATE = """ID comandă: {order_id}
+Prioritate: {priority}
 Design: {design_description}
 
-Processing history:
+Istoric procesare:
 {processing_history}
 
-Inspect this order and issue a quality verdict."""
+{strictness_note}
+Inspectează această comandă și emite un verdict de calitate."""
 
 
 class QCChain:
@@ -113,12 +114,28 @@ class QCChain:
         design_description: str,
         priority: str,
         processing_history: str | None = None,
+        inspection_strictness: str = "normal",
     ) -> QualityDecision:
+        strictness_notes = {
+            "high": (
+                "NOTĂ: Fii deosebit de riguros. Această comandă a trecut prin "
+                "puține stații, deci riscul de defecte ascunse este mai mare. "
+                "Verifică cu atenție sporită."
+            ),
+            "elevated": (
+                "NOTĂ: Fii mai atent decât de obicei. Procesarea a fost "
+                "limitată — inspectează cu grijă zonele de risc."
+            ),
+            "normal": "",
+        }
+        strictness_note = strictness_notes.get(inspection_strictness, "")
+
         prompt_input = {
             "order_id": order_id,
             "priority": priority,
             "design_description": design_description,
             "processing_history": processing_history or "Standard printer + heat_press processing",
+            "strictness_note": strictness_note,
         }
 
         self._init_llm()

@@ -9,6 +9,7 @@ import logging
 from bus import MessageBus
 from llm.routing_chain import RoutingChain
 from models.llm_models import EquipmentStatusInfo, RoutingDecision, StationRoute
+from models.messages import AgentMessage
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ def process_order_pipeline(
         )
 
     print(
-        f"  🧭 LLM route for {order_id}: "
+        f"  🧭 Rută LLM pentru {order_id}: "
         f"{[(r.station, r.required) for r in routing.route]}"
     )
     print(f"     {routing.reason}")
@@ -76,6 +77,8 @@ def process_order_pipeline(
     }
 
     processing_parts: list[str] = []
+    printer_cfg: dict = {}
+    heat_press_cfg: dict = {}
 
     for step in routing.route:
         station = step.station
@@ -83,7 +86,7 @@ def process_order_pipeline(
 
         if not required:
             logger.info("Skipping %s for %s: %s", station, order_id, step.notes)
-            processing_parts.append(f"{station}: skipped ({step.notes})")
+            processing_parts.append(f"{station}: sărită ({step.notes})")
             continue
 
         if station == "printer":
@@ -101,6 +104,8 @@ def process_order_pipeline(
                 logger.error("Order %s failed at Printer", order_id)
                 return "failed_printer"
             processing_parts.append("printer: completed")
+            if "llm_decision" in result:
+                printer_cfg = result["llm_decision"]
 
         elif station == "heat_press":
             logger.info("=== Processing %s: HeatPress stage ===", order_id)
@@ -122,9 +127,32 @@ def process_order_pipeline(
                 logger.error("Order %s failed at HeatPress", order_id)
                 return "failed_heat_press"
             processing_parts.append("heat_press: completed")
+            if "llm_decision" in result_hp:
+                heat_press_cfg = result_hp["llm_decision"]
 
         elif station == "quality_control":
             logger.info("=== Processing %s: QualityControl stage ===", order_id)
+
+            # Send station history to QC agent so it can adjust inspection criteria
+            stations_used = [
+                p.split(":")[0] for p in processing_parts if ": completed" in p
+            ]
+            bus.send(
+                AgentMessage(
+                    sender="pipeline",
+                    receiver="quality_control",
+                    message_type="station_history",
+                    payload={
+                        "order_id": order_id,
+                        "stations_used": stations_used,
+                        "history": "; ".join(processing_parts),
+                        "printer_config": printer_cfg,
+                        "heat_press_config": heat_press_cfg,
+                    },
+                )
+            )
+            bus.dispatch()
+
             processing_history = "; ".join(processing_parts)
             result_qc = qc_agent.process(
                 order_id,

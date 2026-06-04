@@ -29,25 +29,25 @@ from ui.factory import (
 # ---------------------------------------------------------------------------
 
 st.set_page_config(
-    page_title="T-Shirt Factory MAS",
+    page_title="Fabrica de Tricouri MAS",
     page_icon="🏭",
     layout="wide",
 )
 
-st.title("🏭 T-Shirt Factory MAS")
-st.caption("Multi-Agent Simulation — LangGraph + Ollama")
+st.title("🏭 Fabrica de Tricouri MAS")
+st.caption("Simulare Multi-Agent — LangGraph + Ollama")
 
 # ---------------------------------------------------------------------------
 # Sidebar — configuration
 # ---------------------------------------------------------------------------
 
 with st.sidebar:
-    st.header("⚙️ Configuration")
-    num_orders = st.slider("Number of orders", 1, 30, 10)
-    urgent_ratio = st.slider("Urgent ratio", 0.0, 1.0, 0.3, 0.05)
+    st.header("⚙️ Configurare")
+    num_orders = st.slider("Număr de comenzi", 1, 30, 10)
+    urgent_ratio = st.slider("Rată comenzi urgente", 0.0, 1.0, 0.3, 0.05)
     st.divider()
     start = st.button(
-        "▶ Start Simulation", type="primary", use_container_width=True
+        "▶ Pornește Simularea", type="primary", use_container_width=True
     )
 
 # ---------------------------------------------------------------------------
@@ -71,7 +71,7 @@ def _status_icon(status: str) -> str:
 # ---------------------------------------------------------------------------
 
 if not start:
-    st.info("👈 Configure the simulation and click **Start** to begin.")
+    st.info("👈 Configurează simularea și apasă **Pornește Simularea** pentru a începe.")
     st.stop()
 
 # ---------------------------------------------------------------------------
@@ -106,16 +106,16 @@ initial_state = SimulationState(
 # UI placeholders (updated live during stream)
 # ---------------------------------------------------------------------------
 
-progress_bar = st.progress(0, text="Initializing...")
+progress_bar = st.progress(0, text="Inițializare...")
 
 col_left, col_right = st.columns([3, 2])
 
 with col_left:
-    st.subheader("📋 Live Events")
+    st.subheader("📋 Evenimente în Direct")
     event_placeholder = st.empty()
 
 with col_right:
-    st.subheader("📊 Stats")
+    st.subheader("📊 Statistici")
     stats_placeholder = st.empty()
 
 # ---------------------------------------------------------------------------
@@ -151,13 +151,13 @@ try:
                 re_plan_count = data.get("re_plan_count", re_plan_count)
                 current_queue = list(queue)
 
-                label = "Initial plan" if re_plan_count == 1 else "Re-plan"
+                label = "Plan inițial" if re_plan_count == 1 else "Re-plan"
                 events.append(f"🔄 **{label} #{re_plan_count}:** {reason}")
                 if queue:
                     preview = " → ".join(queue[:6])
                     if len(queue) > 6:
                         preview += f" … (+{len(queue) - 6})"
-                    events.append(f"&nbsp;&nbsp;&nbsp;📋 Queue: {preview}")
+                    events.append(f"&nbsp;&nbsp;&nbsp;📋 Coadă: {preview}")
 
             # ---- process_order node ----
             elif node_name == "process_order":
@@ -167,8 +167,8 @@ try:
                 # Handle forced heat-press failure (special case)
                 forced = data.get("heat_press_failure_triggered", False)
                 if forced:
-                    events.append("🔥🔥🔥 **FORCED HEAT PRESS FAILURE** 🔥🔥🔥")
-                    events.append("🔧 Heat press repaired — re-planned")
+                    events.append("🔥🔥🔥 **DEFECT FORȚAT LA PRESA TERMICĂ** 🔥🔥🔥")
+                    events.append("🔧 Presa termică reparată — re-planificat")
                     current_queue = data.get("queue", current_queue)
                 elif result:
                     # Determine which order was just processed
@@ -183,41 +183,41 @@ try:
                         )
                         order_status[processed] = "completed"
                         events.append(
-                            f"✅ **{processed}** completed "
+                            f"✅ **{processed}** finalizată "
                             f"({completed_count}/{total})"
                         )
 
                     elif result == "rework_qc":
                         order_status[processed] = "rework"
                         events.append(
-                            f"🔧 **{processed}** needs rework — re-queued"
+                            f"🔧 **{processed}** necesită refacere — readăugată în coadă"
                         )
 
                     elif result == "rejected_qc":
                         order_status[processed] = "rejected"
                         events.append(
-                            f"❌ **{processed}** failed QC — "
-                            f"re-queued as urgent (full reprint)"
+                            f"❌ **{processed}** respinsă la CQ — "
+                            f"readăugată ca urgentă (reimprimare completă)"
                         )
 
                     elif result.startswith("failed_"):
                         station = result.replace("failed_", "")
                         order_status[processed] = "failed"
                         events.append(
-                            f"⚠️ **{processed}** failed at "
-                            f"**{station.title()}** — re-queued"
+                            f"⚠️ **{processed}** a eșuat la "
+                            f"**{station.title()}** — readăugată în coadă"
                         )
 
                     elif result == "skip":
                         events.append(
-                            f"⏭️ Skipped (already processed)"
+                            f"⏭️ Sărită (deja procesată)"
                         )
 
                     elif result == "empty_queue":
-                        events.append("📭 Queue empty")
+                        events.append("📭 Coada goală")
 
                     else:
-                        events.append(f"❓ Unknown result: {result}")
+                        events.append(f"❓ Rezultat necunoscut: {result}")
 
                 # Track in-progress orders from state update
                 in_progress = data.get("in_progress", {})
@@ -235,7 +235,7 @@ try:
             progress = completed_count / total if total else 0
             progress_bar.progress(
                 progress,
-                text=f"Progress: {completed_count}/{total} orders completed",
+                text=f"Progres: {completed_count}/{total} comenzi finalizate",
             )
 
             with event_placeholder.container():
@@ -243,16 +243,16 @@ try:
                 for ev in reversed(events[-25:]):
                     st.markdown(ev)
                 if not events:
-                    st.caption("Waiting for first event...")
+                    st.caption("Se așteaptă primul eveniment...")
 
             with stats_placeholder.container():
                 c1, c2, c3 = st.columns(3)
-                c1.metric("Completed", f"{completed_count}/{total}")
-                c2.metric("Iterations", iteration)
-                c3.metric("Re-plans", re_plan_count)
+                c1.metric("Finalizate", f"{completed_count}/{total}")
+                c2.metric("Iterații", iteration)
+                c3.metric("Re-planificări", re_plan_count)
 
                 # Order status table
-                st.markdown("##### Order Status")
+                st.markdown("##### Status Comenzi")
                 rows = []
                 for o in orders:
                     sts = order_status.get(o.id, "pending")
@@ -272,7 +272,7 @@ try:
                 )
 
 except Exception as exc:
-    st.error(f"Simulation failed: {exc}")
+    st.error(f"Simularea a eșuat: {exc}")
     raise
 
 # ---------------------------------------------------------------------------
@@ -280,21 +280,21 @@ except Exception as exc:
 # ---------------------------------------------------------------------------
 
 st.divider()
-st.header("📊 Simulation Complete")
+st.header("📊 Simulare Completă")
 
 c1, c2, c3, c4 = st.columns(4)
-c1.metric("Total Orders", total)
-c2.metric("Completed", completed_count)
+c1.metric("Total Comenzi", total)
+c2.metric("Finalizate", completed_count)
 pending_final = total - completed_count
-c3.metric("Pending / Failed", pending_final)
+c3.metric("În Așteptare / Eșuate", pending_final)
 rate = f"{completed_count / total * 100:.1f}%" if total else "0%"
-c4.metric("Completion Rate", rate)
+c4.metric("Rată de Finalizare", rate)
 
-st.caption(f"Re-plans: {re_plan_count}  •  Iterations: {iteration}")
+st.caption(f"Re-planificări: {re_plan_count}  •  Iterații: {iteration}")
 st.caption(f"Thread: `{thread_id}`")
 
 # Final order table
-st.subheader("Final Order Details")
+st.subheader("Detalii Finale Comenzi")
 final_rows = []
 for o in orders:
     sts = order_status.get(o.id, "unknown")
@@ -302,9 +302,9 @@ for o in orders:
         {
             "ID": o.id,
             "Design": o.design_name,
-            "Priority": o.priority,
+            "Prioritate": o.priority,
             "Status": f"{_status_icon(sts)} {sts}",
-            "Reworks": o.rework_count,
+            "Refaceri": o.rework_count,
         }
     )
 st.dataframe(final_rows, width="stretch", hide_index=True)

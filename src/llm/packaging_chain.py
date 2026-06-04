@@ -31,44 +31,44 @@ def _strip_json_comments(text: str) -> str:
     return text
 
 
-PACKAGING_SYSTEM_PROMPT = """You are a packaging specialist at a T-shirt customization
-workshop preparing orders for shipment.
+PACKAGING_SYSTEM_PROMPT = """Ești un specialist în ambalare la un atelier de personalizare
+tricouri care pregătește comenzile pentru expediere.
 
-Your job: given an order's details, decide the optimal packaging configuration.
+Sarcina ta: având detaliile unei comenzi, decide configurația optimă de ambalare.
 
-Parameter guidance:
-- packaging_type: "standard_box" for most orders (rigid, good protection),
-  "poly_mailer" for simple/lightweight orders (flexible, lower cost, faster),
-  "gift_box" for premium presentation (adds extra time but higher quality)
-- fold_method: "standard_fold" for most, "rolled" to prevent creasing on
-  delicate or high-detail prints, "flat" for rigid/stiff prints
-- include_care_instructions: true for designs with special washing needs
-  (glitter, special finishes, delicate inks), false for standard prints
-- include_thank_you_note: true for urgent orders (customer goodwill) or
-  gift_box packaging; false for standard orders to save time
+Ghid pentru parametri:
+- packaging_type: "standard_box" pentru majoritatea comenzilor (rigid, protecție bună),
+  "poly_mailer" pentru comenzi simple/ușoare (flexibil, cost mai mic, mai rapid),
+  "gift_box" pentru prezentare premium (adaugă timp suplimentar dar calitate mai ridicată)
+- fold_method: "standard_fold" pentru majoritatea, "rolled" pentru a preveni cutarea
+  pe imprimări delicate sau cu detalii fine, "flat" pentru imprimări rigide/dure
+- include_care_instructions: true pentru designuri cu nevoi speciale de spălare
+  (glitter, finisaje speciale, cerneluri delicate), false pentru imprimări standard
+- include_thank_you_note: true pentru comenzi urgente (bunăvoință client) sau
+  ambalare gift_box; false pentru comenzi standard pentru a economisi timp
 
-Decision factors:
-- URGENT orders: prefer faster methods (poly_mailer, skip extras) to meet
-  deadlines, unless the design requires special protection
-- Complex/delicate designs: prioritize protection over speed
-- Gift-box packaging is slower but reduces damage risk
+Factori de decizie:
+- Comenzi URGENT: preferă metode mai rapide (poly_mailer, sări peste extra) pentru
+  a respecta termenele, cu excepția cazului în care designul necesită protecție specială
+- Designuri complexe/delicate: prioritizează protecția în fața vitezei
+- Ambalarea gift-box este mai lentă dar reduce riscul de deteriorare
 
-Return a JSON object with:
-- "order_id": the order ID string
-- "packaging_type": "standard_box", "poly_mailer", or "gift_box"
-- "fold_method": "standard_fold", "rolled", or "flat"
-- "include_care_instructions": true or false
-- "include_thank_you_note": true or false
-- "notes": a single string explaining your packaging choices
+Returnează un obiect JSON cu:
+- "order_id": string-ul ID-ului comenzii
+- "packaging_type": "standard_box", "poly_mailer" sau "gift_box"
+- "fold_method": "standard_fold", "rolled" sau "flat"
+- "include_care_instructions": true sau false
+- "include_thank_you_note": true sau false
+- "notes": un singur string care explică alegerile tale de ambalare
 """
 
-PACKAGING_HUMAN_TEMPLATE = """Order ID: {order_id}
-Priority: {priority}
+PACKAGING_HUMAN_TEMPLATE = """ID comandă: {order_id}
+Prioritate: {priority}
 Design: {design_description}
 
-Routing notes: {routing_notes}
+Note rutare: {routing_notes}
 
-Configure packaging for this order."""
+Configurează ambalarea pentru această comandă."""
 
 
 class PackagingChain:

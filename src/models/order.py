@@ -21,41 +21,41 @@ class Order(BaseModel):
 
 DESIGN_DETAILS: dict[str, str] = {
     "dragon": (
-        "Complex multi-color dragon illustration with detailed shading and gradients. "
-        "5 colors, requires precise color registration and alignment. "
-        "Printed on front chest area. Needs heat curing for durability."
+        "Ilustrație complexă de dragon multi-color cu umbriri detaliate și degradeuri. "
+        "5 culori, necesită înregistrare precisă a culorilor și aliniere. "
+        "Imprimat pe zona frontală a pieptului. Necesită întărire termică pentru durabilitate."
     ),
     "unicorn": (
-        "Pastel unicorn design with glitter heat-transfer overlay. "
-        "3 base colors plus glitter layer. Requires heat press for glitter adhesion. "
-        "Delicate pastel tones need careful color calibration."
+        "Design pastelat cu unicorn și suprapunere glitter prin transfer termic. "
+        "3 culori de bază plus strat de glitter. Necesită presă termică pentru aderența glitter-ului. "
+        "Tonurile pastelate delicate necesită calibrare atentă a culorilor."
     ),
     "cyberpunk": (
-        "High-detail cyberpunk cityscape with neon gradients and glow effects. "
-        "7 colors with blending and halftone transitions. Very complex, "
-        "densely detailed. Printed full front. Needs extended curing time."
+        "Peisaj urban cyberpunk foarte detaliat cu degradeuri neon și efecte de strălucire. "
+        "7 culori cu amestecuri și tranziții semiton. Foarte complex, "
+        "dens detaliat. Imprimat pe toată fața. Necesită timp de întărire extins."
     ),
     "minimal": (
-        "Simple single-color line art with small text. Minimalist aesthetic. "
-        "1 color (black). No special treatments needed. Small print on left chest. "
-        "Quick to process, low ink usage."
+        "Artă liniară simplă monocromă cu text mic. Estetică minimalistă. "
+        "1 culoare (negru). Nu necesită tratamente speciale. Imprimare mică pe piept stânga. "
+        "Rapid de procesat, consum redus de cerneală."
     ),
     "retro": (
-        "Vintage distressed print with intentional crackle texture effect. "
-        "2 colors (faded navy + cream). Requires special heat press settings "
-        "with lower temperature and longer dwell time for worn look."
+        "Imprimare vintage cu efect intenționat de textură crackle (crăpată). "
+        "2 culori (bleumarin decolorat + crem). Necesită setări speciale la presa termică "
+        "cu temperatură mai joasă și timp de presare mai lung pentru aspect uzat."
     ),
     "floral": (
-        "Medium-complexity floral pattern with overlapping petals and leaves. "
-        "4 colors with some blending. Needs precise alignment for petal edges. "
-        "Full front print. Moderate curing requirements."
+        "Model floral de complexitate medie cu petale și frunze suprapuse. "
+        "4 culori cu unele amestecuri. Necesită aliniere precisă pentru marginile petalelor. "
+        "Imprimare pe toată fața. Cerințe moderate de întărire."
     ),
     "geometric": (
-        "Clean geometric shapes with sharp edges and precise lines. "
-        "2 colors (high contrast). Requires precise edge definition and "
-        "no bleeding between colors. Moderate complexity."
+        "Forme geometrice clare cu margini precise și linii exacte. "
+        "2 culori (contrast ridicat). Necesită definire precisă a marginilor și "
+        "fără sângerare între culori. Complexitate moderată."
     ),
 }
 
-# Fallback for any design not in the catalogue
-FALLBACK_DESIGN_DESCRIPTION = "Standard single-color design. Basic print with standard curing."
+# Fallback pentru orice design care nu este în catalog
+FALLBACK_DESIGN_DESCRIPTION = "Design standard monocrom. Imprimare de bază cu întărire standard."

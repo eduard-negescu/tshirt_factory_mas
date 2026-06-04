@@ -63,10 +63,52 @@ class SchedulerAgent:
         logger.info("Schedule: %s | Reason: %s", response.schedule, response.reason)
         return response
 
-    def handle_message(self, msg: AgentMessage) -> None:
-        """Log incoming messages — state transitions are handled by graph nodes."""
+    def handle_message(self, msg: AgentMessage):
+        """React to incoming messages with agent-driven decisions.
+
+        - equipment_failure: triggers an immediate re-plan via the LLM
+          chain and returns a ScheduleResponse with the new queue.
+        - All other message types are logged for observability.
+        """
+        if msg.message_type == "equipment_failure":
+            return self._handle_equipment_failure(msg)
+
         logger.debug(
             "Scheduler received: %s from %s (state managed by graph)",
             msg.message_type,
             msg.sender,
         )
+        return None
+
+    def _handle_equipment_failure(self, msg: AgentMessage):
+        """Re-plan on equipment failure using context from the message."""
+        payload = msg.payload
+
+        equipment_statuses_raw = payload.get("equipment_statuses", [])
+        equipment_statuses = [
+            EquipmentStatusInfo(**e) if isinstance(e, dict) else e
+            for e in equipment_statuses_raw
+        ]
+
+        pending_raw = payload.get("pending_orders", [])
+        pending = [
+            PendingOrderInfo(**p) if isinstance(p, dict) else p
+            for p in pending_raw
+        ]
+
+        failed_eq = payload.get("equipment", payload.get("failed_equipment", ""))
+
+        logger.info(
+            "Scheduler re-planning due to %s failure. Equipment: %s, Pending: %d",
+            failed_eq,
+            [(e.name, e.status) for e in equipment_statuses],
+            len(pending),
+        )
+
+        response = self.chain.invoke(equipment_statuses, pending, failed_eq)
+        logger.info(
+            "Message-driven re-plan: %s | Reason: %s",
+            response.schedule,
+            response.reason,
+        )
+        return response
