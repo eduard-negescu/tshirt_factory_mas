@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "Multi-Agent System for Automated T-Shirt Customization Workshop"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.115.0",
     "langchain>=0.3.0",
     "langchain-ollama>=0.2.0",
     "langgraph>=0.2.0",
@@ -12,7 +11,6 @@ dependencies = [
     "psycopg[binary]>=3.2.0",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
-    "uvicorn[standard]>=0.32.0",
 ]
 
 [project.scripts]
@@ -30,7 +28,6 @@ packages = [
     "src/graph",
     "src/llm",
     "src/models",
-    "src/ui",
 ]
 
 [tool.hatch.build.targets.wheel.force-include]

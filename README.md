@@ -126,7 +126,7 @@ src/
 ├── _entry.py                # Dev entry point (sys.path bootstrap)
 ├── agents/
 │   ├── scheduler_agent.py   # Thin wrapper — state managed by LangGraph
-│   ├── printer_agent.py     # Printer station agent1
+│   ├── printer_agent.py     # Printer station agent
 │   ├── heat_press_agent.py  # Heat press station agent
 │   ├── quality_agent.py     # Quality control agent (LLM-driven)
 │   └── packaging_agent.py   # Packaging agent

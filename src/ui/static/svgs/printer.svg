@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100">
-  <rect x="10" y="20" width="100" height="65" rx="6" fill="#5B7FFF" stroke="#3A5AD9" stroke-width="2.5"/>
-  <rect x="20" y="28" width="80" height="6" rx="2" fill="#8FADFF"/>
-  <rect x="65" y="50" width="30" height="10" rx="3" fill="#2D4FB8"/>
-  <rect x="20" y="50" width="40" height="18" rx="3" fill="#FFFFFF" stroke="#3A5AD9" stroke-width="1.5"/>
-  <rect x="25" y="55" width="30" height="8" rx="1" fill="#E8EEFF"/>
-  <circle cx="90" cy="80" r="4" fill="#3AFF7A"/>
-  <text x="60" y="90" text-anchor="middle" font-size="8" fill="white" font-family="sans-serif">PRINTER</text>
-</svg>
