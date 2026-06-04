@@ -8,32 +8,23 @@ Architecture:
 """
 
 import logging
-import random
 import sys
 from datetime import datetime
 from pathlib import Path
 
-from agents.heat_press_agent import HeatPressAgent
-from agents.packaging_agent import PackagingAgent
-from agents.printer_agent import PrinterAgent
-from agents.quality_agent import QualityControlAgent
-from agents.scheduler_agent import SchedulerAgent
 from bus import MessageBus
 from config.settings import Settings
-from equipment.heat_press import HeatPress
-from equipment.packaging_station import PackagingStation
-from equipment.printer import Printer
-from equipment.quality_station import QualityStation
 from graph.builder import build_graph
 from graph.state import SimulationState
 from langgraph.checkpoint.postgres import PostgresSaver
-from llm.heat_press_chain import HeatPressChain
-from llm.packaging_chain import PackagingChain
-from llm.printer_chain import PrinterChain
-from llm.qc_chain import QCChain
-from llm.routing_chain import RoutingChain
 from logging_config import TraceFilter
-from models.order import DESIGN_DETAILS, FALLBACK_DESIGN_DESCRIPTION, Order
+from ui.factory import (
+    create_agents,
+    create_chains,
+    create_config,
+    create_equipment,
+    generate_orders,
+)
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -77,37 +68,6 @@ def setup_logging() -> None:
 logger = logging.getLogger("main")
 
 # ---------------------------------------------------------------------------
-# Order generation
-# ---------------------------------------------------------------------------
-
-DESIGNS = ["dragon", "unicorn", "cyberpunk", "minimal", "retro", "floral", "geometric"]
-
-
-def generate_orders(count: int, urgent_ratio: float = 0.3) -> list[Order]:
-    orders = []
-    urgent_count = max(1, int(count * urgent_ratio))
-    priorities = ["urgent"] * urgent_count + ["normal"] * (count - urgent_count)
-    random.shuffle(priorities)
-
-    for i, priority in enumerate(priorities, start=1):
-        design_name = random.choice(DESIGNS)
-        design_description = DESIGN_DETAILS.get(
-            design_name, FALLBACK_DESIGN_DESCRIPTION
-        )
-        order = Order(
-            id=f"O-{i:03d}",
-            priority=priority,
-            design_name=design_name,
-            design_description=design_description,
-            created_at=datetime.now(),
-        )
-        orders.append(order)
-
-    logger.info("Generated %d orders (%d urgent)", count, urgent_count)
-    return orders
-
-
-# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -123,39 +83,10 @@ def main() -> None:
     # --- Create message bus ---
     bus = MessageBus()
 
-    # --- Create equipment ---
-    printer_eq = Printer(failure_probability=0.08)
-    heat_press_eq = HeatPress(failure_probability=0.08)
-    qc_eq = QualityStation()
-    packaging_eq = PackagingStation(failure_probability=0.05)
-
-    # --- Create LLM chains ---
-    routing_chain = RoutingChain(settings)
-    qc_chain = QCChain(settings)
-    printer_chain = PrinterChain(settings)
-    heat_press_chain = HeatPressChain(settings)
-    packaging_chain = PackagingChain(settings)
-
-    # --- Create agents ---
-    scheduler = SchedulerAgent(settings)
-    printer_agent = PrinterAgent(printer_eq, printer_chain=printer_chain)
-    hp_agent = HeatPressAgent(heat_press_eq, heat_press_chain=heat_press_chain)
-    qc_agent = QualityControlAgent(qc_eq, qc_chain=qc_chain)
-    pkg_agent = PackagingAgent(packaging_eq, packaging_chain=packaging_chain)
-
-    # --- Wire message bus ---
-    bus.register("scheduler", scheduler.handle_message)
-    bus.register("printer", printer_agent.handle_message)
-    bus.register("heat_press", hp_agent.handle_message)
-    bus.register("quality_control", qc_agent.handle_message)
-    bus.register("packaging", pkg_agent.handle_message)
-
-    # Set bus references on agents
-    scheduler.bus = bus
-    printer_agent.bus = bus
-    hp_agent.bus = bus
-    qc_agent.bus = bus
-    pkg_agent.bus = bus
+    # --- Create equipment, chains, and agents (via shared factory) ---
+    equipment = create_equipment()
+    chains = create_chains(settings)
+    agents = create_agents(equipment, chains, bus, settings)
 
     # --- Generate orders ---
     orders = generate_orders(10, urgent_ratio=0.3)
@@ -184,32 +115,14 @@ def main() -> None:
         )
 
         # --- Runtime config (agents, equipment, chains passed via configurable) ---
-        config = {
-            "configurable": {
-                "thread_id": f"sim-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
-                "equipment": {
-                    "printer": printer_eq,
-                    "heat_press": heat_press_eq,
-                    "quality_control": qc_eq,
-                    "packaging": packaging_eq,
-                },
-                "agents": {
-                    "printer": printer_agent,
-                    "heat_press": hp_agent,
-                    "quality_control": qc_agent,
-                    "packaging": pkg_agent,
-                },
-                "chains": {
-                    "routing": routing_chain,
-                    "qc": qc_chain,
-                    "printer": printer_chain,
-                    "heat_press": heat_press_chain,
-                    "packaging": packaging_chain,
-                },
-                "bus": bus,
-                "scheduler_chain": scheduler.chain,
-            }
-        }
+        config = create_config(
+            thread_id=f"sim-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+            equipment=equipment,
+            agents=agents,
+            chains=chains,
+            bus=bus,
+            scheduler_chain=agents["scheduler"].chain,
+        )
 
         # --- Run the simulation ---
         print("-" * 60)

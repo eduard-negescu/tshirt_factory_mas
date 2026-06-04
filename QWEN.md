@@ -7,7 +7,7 @@ A Python multi-agent simulation of an automated T-shirt customization workshop. 
 - **Python** ≥ 3.12
 - **Package manager**: uv (with `uv.lock`)
 - **Build system**: hatchling
-- **Key dependencies**: `langchain` ≥ 0.3.0, `langchain-ollama` ≥ 0.2.0, `langgraph` ≥ 0.2.0, `langgraph-checkpoint-postgres` ≥ 2.0.0, `psycopg[binary]` ≥ 3.2.0, `pydantic` ≥ 2.0.0, `pydantic-settings` ≥ 2.0.0
+- **Key dependencies**: `langchain` ≥ 0.3.0, `langchain-ollama` ≥ 0.2.0, `langgraph` ≥ 0.2.0, `langgraph-checkpoint-postgres` ≥ 2.0.0, `psycopg[binary]` ≥ 3.2.0, `pydantic` ≥ 2.0.0, `pydantic-settings` ≥ 2.0.0, `streamlit` ≥ 1.41.0
 - **LLM backend**: Ollama (default model: `llama3.2`, configurable via `.env`)
 - **Persistence**: PostgreSQL 17 (via Docker Compose) for LangGraph checkpointing
 
@@ -44,6 +44,11 @@ src/
     ├── order.py             # Order model + DESIGN_DETAILS catalogue
     ├── messages.py          # AgentMessage model (sender, receiver, type, payload)
     └── llm_models.py        # ScheduleResponse, RoutingDecision, QualityDecision, etc.
+└── ui/
+    ├── __init__.py
+    ├── _entry.py            # Entry point for `uv run ui` (launches Streamlit)
+    ├── factory.py           # Shared setup (equipment, chains, agents, config)
+    └── streamlit_app.py     # Streamlit dashboard with live streaming
 ```
 
 ## Architecture
@@ -99,21 +104,30 @@ Orders are generated with a `design_name` and a rich `design_description` from `
 # Start PostgreSQL (required for checkpointing)
 docker compose up -d
 
-# Install dependencies and run the simulation
+# CLI — run the simulation once
 uv run dev
+
+# Streamlit UI — interactive dashboard with live streaming
+uv run ui
 ```
 
-Or directly via the module:
-
-```bash
-uv run python -m src.tshirt_mas.main
-```
-
-Requires an Ollama API key configured in `.env` (cloud or local).
+Requirements: Ollama API key configured in `.env` (cloud or local), PostgreSQL running via Docker Compose.
 
 ## Rework Protection
 
 QC verdicts of "rework" trigger re-queuing with no priority escalation (unlike "fail", which escalates to urgent). After 2 consecutive rework attempts on the same order, the system force-completes it to prevent infinite loops.
+
+## Streamlit UI
+
+`src/ui/streamlit_app.py` provides a live dashboard. Key features:
+
+- **Sidebar**: order count slider, urgent ratio slider, start button
+- **Live event feed**: plan decisions and order outcomes streamed in real-time via `graph.stream(stream_mode="updates")`
+- **Stats panel**: progress bar, completed count, iterations, re-plans
+- **Order status table**: per-order status with icons, updates live during the run
+- **Final summary**: completion rate, per-order details after the run ends
+
+Shared setup lives in `src/ui/factory.py` — `main.py` (CLI) and `streamlit_app.py` (UI) both use `create_equipment()`, `create_chains()`, `create_agents()`, and `create_config()` to avoid duplication.
 
 ## Testing
 
@@ -131,5 +145,6 @@ No test suite exists yet. To add tests:
 - Equipment follows: `__init__(name, failure_probability)`, `process(order_id) → dict`, `reset()`. QualityStation is the exception — `inspect(order_id) → float` since the verdict comes from the LLM.
 - Graph nodes follow: `node_name(state: SimulationState, config: RunnableConfig) → dict[str, Any]`. Dependencies (agents, equipment, chains, bus) are passed via `config["configurable"]`.
 - Pipeline (`graph/pipeline.py`): Stateless function — all dependencies are parameters. Returns an outcome string.
+- UI factory (`ui/factory.py`): Shared setup functions (`create_equipment`, `create_chains`, `create_agents`, `create_config`) used by both CLI (`main.py`) and UI (`streamlit_app.py`). When adding new agents, equipment, or chains, update the factory so both entry points stay in sync.
 - Docstrings are minimal; comments explain non-obvious behavior (e.g., forced failure simulation in `nodes.py`, rework counter).
 - LLM chains follow the same pattern: system prompt, human template, `_strip_json_comments`, `PydanticOutputParser`, custom error class.

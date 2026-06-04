@@ -61,6 +61,7 @@ QC verdicts of "rework" trigger re-queuing without priority escalation. After 2 
 | Orchestration | LangGraph ≥ 0.2.0 (StateGraph + PostgresSaver) |
 | LLM framework | LangChain ≥ 0.3.0 + langchain-ollama |
 | LLM backend | Ollama (cloud API or local) |
+| UI | Streamlit ≥ 1.41.0 (live dashboard) |
 | Persistence | PostgreSQL 17 (via Docker Compose) |
 | Data models | Pydantic ≥ 2.0 |
 | Config | pydantic-settings (reads `.env`) |
@@ -105,17 +106,16 @@ cp .env.example .env
 # Start PostgreSQL (required for checkpointing)
 docker compose up -d
 
-# Run the simulation
+# CLI — run the simulation once (generates 10 orders, prints stats)
 uv run dev
+
+# Streamlit UI — interactive dashboard with live streaming
+uv run ui
 ```
 
-Or directly via the module:
+The CLI simulation generates 10 orders (30% urgent) with design descriptions from a catalogue of 7 designs, runs them through the LangGraph pipeline with LLM-driven routing and QC, forces a heat press failure mid-run for recovery demo, and prints statistics. Full debug logs are written to `logs/app.log`. The graph state is checkpointed to PostgreSQL after each node.
 
-```bash
-uv run python -m src.tshirt_mas.main
-```
-
-The simulation generates 10 orders (30% urgent) with design descriptions from a catalogue of 7 designs, runs them through the LangGraph pipeline with LLM-driven routing and QC, forces a heat press failure mid-run for recovery demo, and prints statistics. Full debug logs are written to `logs/app.log`. The graph state is checkpointed to PostgreSQL after each node.
+The Streamlit UI provides a live dashboard with configurable order count and urgent ratio, real-time event feed, progress bar, and per-order status table.
 
 ## Project Structure
 
@@ -150,6 +150,10 @@ src/
     ├── order.py             # Order model + DESIGN_DETAILS catalogue
     ├── messages.py          # AgentMessage model
     └── llm_models.py        # ScheduleResponse, RoutingDecision, QualityDecision, etc.
+└── ui/
+    ├── _entry.py            # Entry point for `uv run ui`
+    ├── factory.py           # Shared setup (equipment, chains, agents, config)
+    └── streamlit_app.py     # Streamlit dashboard with live streaming
 ```
 
 ## Design Catalogue
