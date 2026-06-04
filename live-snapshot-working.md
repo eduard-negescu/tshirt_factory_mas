@@ -1,0 +1,33 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e15]:
+    - heading "🏭 Live Factory" [level=2] [ref=e16]
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]: "0"
+        - generic [ref=e20]: Completed
+      - generic [ref=e21]:
+        - generic [ref=e22]: "1"
+        - generic [ref=e23]: Iteration
+      - generic [ref=e24]:
+        - generic [ref=e25]: "2"
+        - generic [ref=e26]: Re-plans
+  - generic [ref=e30]:
+    - heading "📋 Queue" [level=3] [ref=e31]
+    - generic [ref=e32]: O-002 O-001
+    - heading "🧠 Scheduler Reasoning" [level=3] [ref=e33]
+    - generic [ref=e35]: URGENT order (O-002) must be processed before NORMAL order (O-001) as per priority rules. All equipment is available, so the schedule follows the priority order directly.
+    - heading "📝 Activity" [level=3] [ref=e36]
+    - generic [ref=e38]:
+      - generic [ref=e48]: "18:35:35 ▶ O-002: packaging"
+      - generic [ref=e49]: "18:35:35 ✅ O-002: quality_control done"
+      - generic [ref=e50]: "18:35:32 ▶ O-002: quality_control"
+      - generic [ref=e51]: "18:35:32 ✅ O-002: heat_press done"
+      - generic [ref=e46]: "18:35:25 ▶ O-002: heat_press"
+      - generic [ref=e47]: "18:35:25 ✅ O-002: printer done"
+      - generic [ref=e40]: "18:35:20 ▶ O-002: printer"
+      - generic [ref=e41]: "18:35:20 🧭 O-002: routing — The design is a high-detail, multi-color (7+ colors) cyberpunk cityscape with gr"
+      - generic [ref=e42]: "18:35:17 📋 Plan #2: URGENT order (O-002) must be processed before NORMAL order (O-001) as per priority rules. All equipment is available, so the schedule follows the priority order directly."
+      - generic [ref=e43]: "18:35:16 ❌ O-002: printer FAILED"
+      - generic [ref=e44]: "18:35:11 ▶ O-002: printer"
+      - generic [ref=e45]: "18:35:11 🧭 O-002: routing — The design is a high-detail, multi-color (7+ colors), complex cyberpunk cityscap"
+      - generic [ref=e39]: "18:35:07 📋 Plan #1: URGENT order (O-002) is processed before NORMAL order (O-001) as per priority rules. No equipment failures or rejections to account for."

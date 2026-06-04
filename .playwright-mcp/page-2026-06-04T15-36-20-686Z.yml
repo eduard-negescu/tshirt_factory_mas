@@ -1,0 +1,22 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - 'heading "⏪ Replay: sim-20260604-153506" [level=2] [ref=e3]'
+    - link "← Back to History" [ref=e4] [cursor=pointer]:
+      - /url: /history
+  - generic [ref=e8]:
+    - heading "📋 Queue" [level=3] [ref=e9]
+    - generic [ref=e10]:
+      - generic [ref=e11]: O-002
+      - generic [ref=e12]: O-001
+    - heading "🧠 Scheduler" [level=3] [ref=e13]
+    - generic [ref=e15]: URGENT order (O-002) must be processed before NORMAL order (O-001). All equipment is available, so the schedule follows priority rules directly without any rejections or delays.
+    - heading "📝 Activity" [level=3] [ref=e16]
+    - generic [ref=e18]:
+      - generic [ref=e19]: "18:36:17 📋 Plan #4: URGENT order (O-002) must be processed before NORMAL order (O-001). All equipment is available, so the schedule follows priority rules directly without any rejections or delays."
+      - generic [ref=e20]: "18:36:17 📋 Plan #3: URGENT order (O-002) is processed before NORMAL order (O-001) as per priority rules. All equipment is available, so no rejections or re-processing are required."
+      - generic [ref=e21]: "18:36:17 📋 Plan #3: URGENT order (O-002) is processed before NORMAL order (O-001) as per priority rules. All equipment is available, so no rejections or re-processing are required."
+      - generic [ref=e22]: "18:36:17 📋 Plan #2: URGENT order (O-002) must be processed before NORMAL order (O-001) as per priority rules. All equipment is available, so the schedule follows the priority order directly."
+      - generic [ref=e23]: "18:36:17 📋 Plan #2: URGENT order (O-002) must be processed before NORMAL order (O-001) as per priority rules. All equipment is available, so the schedule follows the priority order directly."
+      - generic [ref=e24]: "18:36:17 📋 Plan #1: URGENT order (O-002) is processed before NORMAL order (O-001) as per priority rules. No equipment failures or rejections to account for."
+      - generic [ref=e25]: "18:36:17 📋 Plan #1: URGENT order (O-002) is processed before NORMAL order (O-001) as per priority rules. No equipment failures or rejections to account for."
+      - generic [ref=e26]: "18:36:17 📋 Plan #0: (replay)"

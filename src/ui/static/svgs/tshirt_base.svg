@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <!-- T-shirt shape -->
+  <path d="M25,8 L15,15 L10,28 L20,26 L22,70 L58,70 L60,26 L70,28 L65,15 L55,8 L50,18 Q40,20 30,18 Z" fill="#ECF0F1" stroke="#BDC3C7" stroke-width="2"/>
+  <!-- Collar -->
+  <path d="M30,18 Q40,25 50,18" fill="none" stroke="#BDC3C7" stroke-width="1.5"/>
+</svg>

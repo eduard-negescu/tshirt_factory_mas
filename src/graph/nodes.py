@@ -207,6 +207,7 @@ def process_order_node(
         outcome = process_order_pipeline(
             order_id=order_id,
             design_description=order.design_description,
+            design_name=order.design_name,
             priority=order.priority,
             printer_agent=agents["printer"],
             hp_agent=agents["heat_press"],
@@ -215,6 +216,7 @@ def process_order_node(
             bus=bus,
             routing_chain=chains["routing"],
             equipment_statuses=equipment_statuses,
+            event_callback=config["configurable"].get("event_callback"),
         )
 
         # --- Handle outcome ---

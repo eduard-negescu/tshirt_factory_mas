@@ -1,0 +1,18 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e15]:
+    - heading "🏭 Live Factory" [level=2] [ref=e16]
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]: "0"
+        - generic [ref=e20]: Completed
+      - generic [ref=e21]:
+        - generic [ref=e22]: "0"
+        - generic [ref=e23]: Iteration
+      - generic [ref=e24]:
+        - generic [ref=e25]: "0"
+        - generic [ref=e26]: Re-plans
+  - generic [ref=e30]:
+    - heading "📋 Queue" [level=3] [ref=e31]
+    - heading "🧠 Scheduler Reasoning" [level=3] [ref=e32]
+    - generic [ref=e34]: Waiting for scheduler...
+    - heading "📝 Activity" [level=3] [ref=e35]

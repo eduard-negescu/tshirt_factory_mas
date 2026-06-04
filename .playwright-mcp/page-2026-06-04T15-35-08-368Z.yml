@@ -1,0 +1,20 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e15]:
+    - heading "🏭 Live Factory" [level=2] [ref=e16]
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]: "0"
+        - generic [ref=e20]: Completed
+      - generic [ref=e21]:
+        - generic [ref=e22]: "0"
+        - generic [ref=e23]: Iteration
+      - generic [ref=e24]:
+        - generic [ref=e25]: "1"
+        - generic [ref=e26]: Re-plans
+  - generic [ref=e30]:
+    - heading "📋 Queue" [level=3] [ref=e31]
+    - generic [ref=e32]: O-002 O-001
+    - heading "🧠 Scheduler Reasoning" [level=3] [ref=e33]
+    - generic [ref=e35]: URGENT order (O-002) is processed before NORMAL order (O-001) as per priority rules. No equipment failures or rejections to account for.
+    - heading "📝 Activity" [level=3] [ref=e36]
+    - generic [ref=e39]: "18:35:07 📋 Plan #1: URGENT order (O-002) is processed before NORMAL order (O-001) as per priority rules. No equipment failures or rejections to account for."

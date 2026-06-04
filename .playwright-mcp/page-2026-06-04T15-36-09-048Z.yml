@@ -1,0 +1,10 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - 'heading "⏪ Replay: sim-20260604-153506" [level=2] [ref=e3]'
+    - link "← Back to History" [ref=e4] [cursor=pointer]:
+      - /url: /history
+  - generic [ref=e8]:
+    - heading "📋 Queue" [level=3] [ref=e9]
+    - heading "🧠 Scheduler" [level=3] [ref=e11]
+    - generic [ref=e13]: Replaying from checkpoint...
+    - heading "📝 Activity" [level=3] [ref=e14]

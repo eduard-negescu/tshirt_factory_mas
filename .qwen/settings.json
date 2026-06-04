@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Agent(Explore)"
+      "Agent(Explore)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_click",
+      "Bash(timeout *)",
+      "Bash(true)",
+      "Bash(curl *)",
+      "Bash(uv *)",
+      "Bash(sleep *)",
+      "Bash(pkill *)"
     ]
   },
   "$version": 4

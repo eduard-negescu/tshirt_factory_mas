@@ -1,0 +1,9 @@
+[   25129ms] ReferenceError: initFactoryCanvas is not defined
+    at <anonymous>:5:1
+    at a (https://unpkg.com/htmx.org@2.0.4:1:12394)
+    at Ve (https://unpkg.com/htmx.org@2.0.4:1:13912)
+    at _e (https://unpkg.com/htmx.org@2.0.4:1:14555)
+    at $e (https://unpkg.com/htmx.org@2.0.4:1:15653)
+    at e (https://unpkg.com/htmx.org@2.0.4:1:47975)
+    at Dn (https://unpkg.com/htmx.org@2.0.4:1:48746)
+    at p.onload (https://unpkg.com/htmx.org@2.0.4:1:43886)

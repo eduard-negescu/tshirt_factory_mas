@@ -1,0 +1,19 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - heading "🏭 Live Factory" [level=2] [ref=e3]
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]: "0"
+        - generic [ref=e7]: Completed
+      - generic [ref=e8]:
+        - generic [ref=e9]: "0"
+        - generic [ref=e10]: Iteration
+      - generic [ref=e11]:
+        - generic [ref=e12]: "0"
+        - generic [ref=e13]: Re-plans
+  - generic [ref=e17]:
+    - heading "📋 Queue" [level=3] [ref=e18]
+    - heading "🧠 Scheduler Reasoning" [level=3] [ref=e20]
+    - generic [ref=e22]: Waiting for scheduler...
+    - heading "📝 Activity" [level=3] [ref=e23]
+    - generic [ref=e26]: 18:25:09 ⚠️ SSE connection error

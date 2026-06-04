@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100">
+  <rect x="20" y="35" width="80" height="50" rx="4" fill="#27AE60" stroke="#1E8449" stroke-width="2.5"/>
+  <rect x="15" y="28" width="20" height="15" rx="2" fill="#2ECC71" stroke="#1E8449" stroke-width="1.5"/>
+  <rect x="85" y="28" width="20" height="15" rx="2" fill="#2ECC71" stroke="#1E8449" stroke-width="1.5"/>
+  <line x1="60" y1="35" x2="60" y2="85" stroke="#1E8449" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <line x1="20" y1="60" x2="100" y2="60" stroke="#1E8449" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <rect x="35" y="40" width="20" height="15" rx="2" fill="#D5F5E3"/>
+  <text x="60" y="95" text-anchor="middle" font-size="7" fill="#1E8449" font-family="sans-serif">PACKAGING</text>
+</svg>

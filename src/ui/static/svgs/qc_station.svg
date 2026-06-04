@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100">
+  <rect x="20" y="25" width="80" height="55" rx="8" fill="#9B59B6" stroke="#7D3C98" stroke-width="2.5"/>
+  <circle cx="60" cy="45" r="18" fill="#D7BDE2" stroke="#7D3C98" stroke-width="2"/>
+  <circle cx="60" cy="45" r="10" fill="#9B59B6"/>
+  <line x1="60" y1="25" x2="60" y2="18" stroke="#7D3C98" stroke-width="3"/>
+  <circle cx="60" cy="15" r="4" fill="#FFD700"/>
+  <rect x="40" y="65" width="40" height="6" rx="2" fill="#D7BDE2"/>
+  <text x="60" y="90" text-anchor="middle" font-size="7" fill="white" font-family="sans-serif">QC</text>
+</svg>

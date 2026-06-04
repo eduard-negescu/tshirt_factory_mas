@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100">
+  <rect x="15" y="10" width="90" height="20" rx="4" fill="#FF6B35" stroke="#CC4A1A" stroke-width="2.5"/>
+  <rect x="25" y="32" width="70" height="45" rx="5" fill="#FF8C60" stroke="#CC4A1A" stroke-width="2"/>
+  <rect x="35" y="42" width="50" height="25" rx="3" fill="#FFD4C0"/>
+  <line x1="45" y1="55" x2="75" y2="55" stroke="#CC4A1A" stroke-width="1.5"/>
+  <line x1="45" y1="60" x2="75" y2="60" stroke="#CC4A1A" stroke-width="1"/>
+  <ellipse cx="60" cy="88" rx="20" ry="4" fill="#FFD4C0"/>
+  <text x="60" y="98" text-anchor="middle" font-size="7" fill="#CC4A1A" font-family="sans-serif">HEAT PRESS</text>
+</svg>

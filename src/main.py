@@ -10,30 +10,15 @@ Architecture:
 import logging
 import random
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
-from agents.heat_press_agent import HeatPressAgent
-from agents.packaging_agent import PackagingAgent
-from agents.printer_agent import PrinterAgent
-from agents.quality_agent import QualityControlAgent
-from agents.scheduler_agent import SchedulerAgent
-from bus import MessageBus
 from config.settings import Settings
-from equipment.heat_press import HeatPress
-from equipment.packaging_station import PackagingStation
-from equipment.printer import Printer
-from equipment.quality_station import QualityStation
-from graph.builder import build_graph
 from graph.state import SimulationState
 from langgraph.checkpoint.postgres import PostgresSaver
-from llm.heat_press_chain import HeatPressChain
-from llm.packaging_chain import PackagingChain
-from llm.printer_chain import PrinterChain
-from llm.qc_chain import QCChain
-from llm.routing_chain import RoutingChain
 from logging_config import TraceFilter
 from models.order import DESIGN_DETAILS, FALLBACK_DESIGN_DESCRIPTION, Order
+from ui.factory import create_simulation
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -77,13 +62,13 @@ def setup_logging() -> None:
 logger = logging.getLogger("main")
 
 # ---------------------------------------------------------------------------
-# Order generation
+# Order generation (local copy for CLI path — factory.py has its own)
 # ---------------------------------------------------------------------------
 
 DESIGNS = ["dragon", "unicorn", "cyberpunk", "minimal", "retro", "floral", "geometric"]
 
 
-def generate_orders(count: int, urgent_ratio: float = 0.3) -> list[Order]:
+def _generate_orders(count: int, urgent_ratio: float = 0.3) -> list[Order]:
     orders = []
     urgent_count = max(1, int(count * urgent_ratio))
     priorities = ["urgent"] * urgent_count + ["normal"] * (count - urgent_count)
@@ -99,7 +84,7 @@ def generate_orders(count: int, urgent_ratio: float = 0.3) -> list[Order]:
             priority=priority,
             design_name=design_name,
             design_description=design_description,
-            created_at=datetime.now(),
+            created_at=datetime.now(timezone.utc),
         )
         orders.append(order)
 
@@ -107,134 +92,19 @@ def generate_orders(count: int, urgent_ratio: float = 0.3) -> list[Order]:
     return orders
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
-
-def main() -> None:
-    setup_logging()
-    settings = Settings()
-
-    logger.info("=" * 60)
-    logger.info("TSHIRT MAS - Multi-Agent System (LangGraph)")
-    logger.info("=" * 60)
-
-    # --- Create message bus ---
-    bus = MessageBus()
-
-    # --- Create equipment ---
-    printer_eq = Printer(failure_probability=0.08)
-    heat_press_eq = HeatPress(failure_probability=0.08)
-    qc_eq = QualityStation()
-    packaging_eq = PackagingStation(failure_probability=0.05)
-
-    # --- Create LLM chains ---
-    routing_chain = RoutingChain(settings)
-    qc_chain = QCChain(settings)
-    printer_chain = PrinterChain(settings)
-    heat_press_chain = HeatPressChain(settings)
-    packaging_chain = PackagingChain(settings)
-
-    # --- Create agents ---
-    scheduler = SchedulerAgent(settings)
-    printer_agent = PrinterAgent(printer_eq, printer_chain=printer_chain)
-    hp_agent = HeatPressAgent(heat_press_eq, heat_press_chain=heat_press_chain)
-    qc_agent = QualityControlAgent(qc_eq, qc_chain=qc_chain)
-    pkg_agent = PackagingAgent(packaging_eq, packaging_chain=packaging_chain)
-
-    # --- Wire message bus ---
-    bus.register("scheduler", scheduler.handle_message)
-    bus.register("printer", printer_agent.handle_message)
-    bus.register("heat_press", hp_agent.handle_message)
-    bus.register("quality_control", qc_agent.handle_message)
-    bus.register("packaging", pkg_agent.handle_message)
-
-    # Set bus references on agents
-    scheduler.bus = bus
-    printer_agent.bus = bus
-    hp_agent.bus = bus
-    qc_agent.bus = bus
-    pkg_agent.bus = bus
-
-    # --- Generate orders ---
-    orders = generate_orders(10, urgent_ratio=0.3)
-
-    print("\n" + "=" * 60)
-    print("  T-SHIRT FACTORY MULTI-AGENT SYSTEM")
-    print("  Powered by LangGraph + Ollama")
-    print("=" * 60)
-    print(f"\n  Generated {len(orders)} orders:")
-    for o in orders:
-        tag = "⚡ URGENT" if o.priority == "urgent" else "   normal"
-        print(f"    {o.id}  {tag}  [{o.design_name}]")
-    print()
-
-    # --- Build the graph with PostgresSaver ---
-    logger.info("Initializing PostgresSaver and setting up checkpoint tables...")
-
-    with PostgresSaver.from_conn_string(settings.database_url) as checkpointer:
-        checkpointer.setup()
-        graph = build_graph(checkpointer)
-
-        # --- Initialize simulation state ---
-        initial_state = SimulationState(
-            pending_orders={o.id: o for o in orders},
-            all_orders={o.id: o for o in orders},
-        )
-
-        # --- Runtime config (agents, equipment, chains passed via configurable) ---
-        config = {
-            "configurable": {
-                "thread_id": f"sim-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
-                "equipment": {
-                    "printer": printer_eq,
-                    "heat_press": heat_press_eq,
-                    "quality_control": qc_eq,
-                    "packaging": packaging_eq,
-                },
-                "agents": {
-                    "printer": printer_agent,
-                    "heat_press": hp_agent,
-                    "quality_control": qc_agent,
-                    "packaging": pkg_agent,
-                },
-                "chains": {
-                    "routing": routing_chain,
-                    "qc": qc_chain,
-                    "printer": printer_chain,
-                    "heat_press": heat_press_chain,
-                    "packaging": packaging_chain,
-                },
-                "bus": bus,
-                "scheduler_chain": scheduler.chain,
-            }
-        }
-
-        # --- Run the simulation ---
-        print("-" * 60)
-        print("  Starting pipeline execution...")
-        print(f"  Thread: {config['configurable']['thread_id']}")
-        print("-" * 60)
-        print()
-
-        final_state_dict = graph.invoke(initial_state, config)
-        final_state = SimulationState(**final_state_dict)
-
-    # --- Statistics ---
+def _print_statistics(final_state: SimulationState, orders: list[Order]) -> None:
     print("\n" + "=" * 60)
     print("  SIMULATION COMPLETE")
     print("=" * 60)
 
     completed = len(final_state.completed_orders)
-    pending = len(final_state.pending_orders)
     total = len(orders)
 
     print(f"\n  📊 FINAL STATISTICS")
     print(f"  {'─' * 40}")
     print(f"  Total orders:           {total}")
     print(f"  Completed:              {completed}")
-    print(f"  Still pending:          {pending}")
+    print(f"  Still pending:          {len(final_state.pending_orders)}")
     print(f"  In progress:            {len(final_state.in_progress)}")
     print(f"  Completion rate:        {completed / total * 100:.1f}%")
     print(f"  LLM re-plans:           {final_state.re_plan_count}")
@@ -250,7 +120,6 @@ def main() -> None:
     )
     print(f"  Urgent orders:          {urgent_completed}/{urgent_total} completed")
 
-    # Per-order status — reconstruct from graph state
     print(f"\n  📋 ORDER STATUS:")
     for o in orders:
         if o.id in final_state.completed_orders:
@@ -271,6 +140,58 @@ def main() -> None:
 
     print(f"\n  📝 Full logs: {LOG_DIR / 'app.log'}")
     print("=" * 60)
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+
+def main() -> None:
+    setup_logging()
+    settings = Settings()
+
+    logger.info("=" * 60)
+    logger.info("TSHIRT MAS - Multi-Agent System (LangGraph)")
+    logger.info("=" * 60)
+
+    orders = _generate_orders(10, urgent_ratio=0.3)
+
+    print("\n" + "=" * 60)
+    print("  T-SHIRT FACTORY MULTI-AGENT SYSTEM")
+    print("  Powered by LangGraph + Ollama")
+    print("=" * 60)
+    print(f"\n  Generated {len(orders)} orders:")
+    for o in orders:
+        tag = "⚡ URGENT" if o.priority == "urgent" else "   normal"
+        print(f"    {o.id}  {tag}  [{o.design_name}]")
+    print()
+
+    logger.info("Initializing PostgresSaver and setting up checkpoint tables...")
+
+    with PostgresSaver.from_conn_string(settings.database_url) as checkpointer:
+        checkpointer.setup()
+        graph, initial_state, config = create_simulation(
+            checkpointer=checkpointer,
+            settings=settings,
+            order_count=len(orders),
+            urgent_ratio=0.3,
+        )
+
+        # Use pre-generated orders (CLI may have different random seed)
+        initial_state.pending_orders = {o.id: o for o in orders}
+        initial_state.all_orders = {o.id: o for o in orders}
+
+        print("-" * 60)
+        print("  Starting pipeline execution...")
+        print(f"  Thread: {config['configurable']['thread_id']}")
+        print("-" * 60)
+        print()
+
+        final_state_dict = graph.invoke(initial_state, config)
+        final_state = SimulationState(**final_state_dict)
+
+    _print_statistics(final_state, orders)
 
 
 if __name__ == "__main__":
