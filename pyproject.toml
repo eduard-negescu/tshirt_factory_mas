@@ -6,6 +6,9 @@ requires-python = ">=3.12"
 dependencies = [
     "langchain>=0.3.0",
     "langchain-ollama>=0.2.0",
+    "langgraph>=0.2.0",
+    "langgraph-checkpoint-postgres>=2.0.0",
+    "psycopg[binary]>=3.2.0",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
 ]
@@ -22,6 +25,7 @@ packages = [
     "src/agents",
     "src/config",
     "src/equipment",
+    "src/graph",
     "src/llm",
     "src/models",
 ]
