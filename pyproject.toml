@@ -34,3 +34,4 @@ packages = [
 "src/main.py" = "main.py"
 "src/bus.py" = "bus.py"
 "src/_entry.py" = "_entry.py"
+"src/logging_config.py" = "logging_config.py"

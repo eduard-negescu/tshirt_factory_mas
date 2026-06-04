@@ -17,6 +17,13 @@ class QCLLMError(Exception):
     """Raised when the LLM call for quality inspection fails."""
 
 
+def _log_raw_response(text) -> str:
+    """Log the raw LLM output before any parsing, so it survives parse failures."""
+    content = text.content if hasattr(text, "content") else text
+    logger.debug("Raw LLM output:\n%s", content)
+    return text
+
+
 def _strip_json_comments(text: str) -> str:
     """Remove // comments and trailing commas so the JSON is parseable."""
     if hasattr(text, "content"):
@@ -97,7 +104,7 @@ class QCChain:
             ]
         )
         self._chain = (
-            self._prompt | self._llm | RunnableLambda(_strip_json_comments) | self._parser
+            self._prompt | self._llm | RunnableLambda(_log_raw_response) | RunnableLambda(_strip_json_comments) | self._parser
         )
 
     def invoke(

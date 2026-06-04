@@ -29,6 +29,7 @@ from graph.state import SimulationState
 from langgraph.checkpoint.postgres import PostgresSaver
 from llm.qc_chain import QCChain
 from llm.routing_chain import RoutingChain
+from logging_config import TraceFilter
 from models.order import DESIGN_DETAILS, FALLBACK_DESIGN_DESCRIPTION, Order
 
 # ---------------------------------------------------------------------------
@@ -45,16 +46,22 @@ def setup_logging() -> None:
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.DEBUG)
 
+    trace_filter = TraceFilter()
+
     file_handler = logging.FileHandler(log_file, encoding="utf-8")
     file_handler.setLevel(logging.DEBUG)
+    file_handler.addFilter(trace_filter)
     file_fmt = logging.Formatter(
-        "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+        "%(asctime)s | %(levelname)-8s | %(trace_id)-8s | %(name)s | %(message)s"
     )
     file_handler.setFormatter(file_fmt)
 
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.INFO)
-    console_fmt = logging.Formatter("%(levelname)-8s | %(name)s | %(message)s")
+    console_handler.addFilter(trace_filter)
+    console_fmt = logging.Formatter(
+        "%(levelname)-8s | %(trace_id)-8s | %(name)s | %(message)s"
+    )
     console_handler.setFormatter(console_fmt)
 
     root_logger.addHandler(file_handler)
