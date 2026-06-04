@@ -1,0 +1,37 @@
+2026-06-03 00:10:10,058 | INFO     | main | ============================================================
+2026-06-03 00:10:10,058 | INFO     | main | TSHIRT MAS - Multi-Agent System Demo
+2026-06-03 00:10:10,058 | INFO     | main | ============================================================
+2026-06-03 00:10:10,058 | DEBUG    | bus | MessageBus: registered handler for 'scheduler'
+2026-06-03 00:10:10,058 | DEBUG    | bus | MessageBus: registered handler for 'printer'
+2026-06-03 00:10:10,058 | DEBUG    | bus | MessageBus: registered handler for 'heat_press'
+2026-06-03 00:10:10,058 | DEBUG    | bus | MessageBus: registered handler for 'quality_control'
+2026-06-03 00:10:10,058 | DEBUG    | bus | MessageBus: registered handler for 'packaging'
+2026-06-03 00:10:10,059 | INFO     | main | Generated 10 orders (3 urgent)
+2026-06-03 00:10:10,059 | INFO     | agents.scheduler_agent | Scheduler received 10 orders. Pending: 10
+2026-06-03 00:10:10,059 | INFO     | agents.scheduler_agent | SchedulerAgent requesting plan. Equipment: [('printer', 'available'), ('heat_press', 'available'), ('quality_control', 'available'), ('packaging', 'available')], Pending: 10, Failed: None
+2026-06-03 00:10:10,074 | INFO     | llm.scheduler_chain | Calling LLM for scheduling. Prompt:
+{
+  "equipment_status": "  - printer: available\n  - heat_press: available\n  - quality_control: available\n  - packaging: available",
+  "pending_orders": "  - O-001 (priority: urgent)\n  - O-002 (priority: urgent)\n  - O-003 (priority: normal)\n  - O-004 (priority: normal)\n  - O-005 (priority: normal)\n  - O-006 (priority: normal)\n  - O-007 (priority: normal)\n  - O-008 (priority: normal)\n  - O-009 (priority: urgent)\n  - O-010 (priority: normal)",
+  "failure_note": ""
+}
+2026-06-03 00:10:10,119 | ERROR    | llm.scheduler_chain | LLM call failed: [Errno 111] Connection refused
+2026-06-03 00:11:08,852 | INFO     | main | ============================================================
+2026-06-03 00:11:08,853 | INFO     | main | TSHIRT MAS - Multi-Agent System Demo
+2026-06-03 00:11:08,853 | INFO     | main | ============================================================
+2026-06-03 00:11:08,853 | DEBUG    | bus | MessageBus: registered handler for 'scheduler'
+2026-06-03 00:11:08,853 | DEBUG    | bus | MessageBus: registered handler for 'printer'
+2026-06-03 00:11:08,853 | DEBUG    | bus | MessageBus: registered handler for 'heat_press'
+2026-06-03 00:11:08,853 | DEBUG    | bus | MessageBus: registered handler for 'quality_control'
+2026-06-03 00:11:08,853 | DEBUG    | bus | MessageBus: registered handler for 'packaging'
+2026-06-03 00:11:08,853 | INFO     | main | Generated 10 orders (3 urgent)
+2026-06-03 00:11:08,853 | INFO     | agents.scheduler_agent | Scheduler received 10 orders. Pending: 10
+2026-06-03 00:11:08,853 | INFO     | agents.scheduler_agent | SchedulerAgent requesting plan. Equipment: [('printer', 'available'), ('heat_press', 'available'), ('quality_control', 'available'), ('packaging', 'available')], Pending: 10, Failed: None
+2026-06-03 00:11:08,870 | INFO     | llm.scheduler_chain | Calling LLM for scheduling. Prompt:
+{
+  "equipment_status": "  - printer: available\n  - heat_press: available\n  - quality_control: available\n  - packaging: available",
+  "pending_orders": "  - O-001 (priority: urgent)\n  - O-002 (priority: normal)\n  - O-003 (priority: normal)\n  - O-004 (priority: normal)\n  - O-005 (priority: urgent)\n  - O-006 (priority: normal)\n  - O-007 (priority: normal)\n  - O-008 (priority: normal)\n  - O-009 (priority: normal)\n  - O-010 (priority: urgent)",
+  "failure_note": ""
+}
+2026-06-03 00:11:09,098 | ERROR    | llm.scheduler_chain | LLM call failed: unauthorized
+ (status code: 401)
