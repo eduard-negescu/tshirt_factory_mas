@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Agent(Explore)"
+      "Agent(Explore)",
+      "Bash(uv *)",
+      "mcp__playwright__browser_run_code_unsafe"
     ]
-  }
+  },
+  "$version": 4
 }
