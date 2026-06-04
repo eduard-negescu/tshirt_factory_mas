@@ -75,3 +75,102 @@ class QualityDecision(BaseModel):
         if v is None:
             return ""
         return v
+
+
+# ---------------------------------------------------------------------------
+# Printer models
+# ---------------------------------------------------------------------------
+
+
+class PrinterDecision(BaseModel):
+    """LLM-driven printer configuration for an order."""
+
+    order_id: str
+    print_temperature: Literal["low", "standard", "high"] = Field(
+        description="Print head temperature setting"
+    )
+    ink_saturation: Literal["light", "normal", "heavy"] = Field(
+        description="Ink flow intensity"
+    )
+    number_of_passes: int = Field(
+        ge=1, le=5, description="How many print head passes (1-5)"
+    )
+    color_profile: Literal["standard", "vibrant", "accurate"] = Field(
+        description="Color rendering profile"
+    )
+    notes: str = Field(
+        default="", description="Reasoning for printer configuration choices"
+    )
+
+    @field_validator("notes", mode="before")
+    @classmethod
+    def coerce_null_to_empty(cls, v: Any) -> str:
+        if v is None:
+            return ""
+        return v
+
+
+# ---------------------------------------------------------------------------
+# HeatPress models
+# ---------------------------------------------------------------------------
+
+
+class HeatPressDecision(BaseModel):
+    """LLM-driven heat press configuration for an order."""
+
+    order_id: str
+    temperature: Literal["low", "medium", "high"] = Field(
+        description="Heat press temperature setting"
+    )
+    dwell_time: Literal["short", "standard", "extended"] = Field(
+        description="How long the press holds"
+    )
+    pressure: Literal["light", "medium", "firm"] = Field(
+        description="Press pressure level"
+    )
+    multi_pass: bool = Field(
+        description="Whether multiple press cycles are needed"
+    )
+    notes: str = Field(
+        default="", description="Reasoning for heat press configuration choices"
+    )
+
+    @field_validator("notes", mode="before")
+    @classmethod
+    def coerce_null_to_empty(cls, v: Any) -> str:
+        if v is None:
+            return ""
+        return v
+
+
+# ---------------------------------------------------------------------------
+# Packaging models
+# ---------------------------------------------------------------------------
+
+
+class PackagingDecision(BaseModel):
+    """LLM-driven packaging configuration for an order."""
+
+    order_id: str
+    packaging_type: Literal["standard_box", "poly_mailer", "gift_box"] = Field(
+        description="Packaging container type"
+    )
+    fold_method: Literal["standard_fold", "rolled", "flat"] = Field(
+        description="How the shirt is folded"
+    )
+    include_care_instructions: bool = Field(
+        description="Whether to include care label instructions"
+    )
+    include_thank_you_note: bool = Field(
+        description="Whether to include a thank-you card"
+    )
+    notes: str = Field(
+        default="", description="Reasoning for packaging configuration choices"
+    )
+
+    @field_validator("notes", mode="before")
+    @classmethod
+    def coerce_null_to_empty(cls, v: Any) -> str:
+        if v is None:
+            return ""
+        return v

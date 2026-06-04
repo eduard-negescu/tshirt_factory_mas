@@ -70,6 +70,11 @@ def process_order_pipeline(
     )
     print(f"     {routing.reason}")
 
+    # Build per-station routing notes to pass to agents
+    routing_notes: dict[str, str] = {
+        r.station: r.notes for r in routing.route
+    }
+
     processing_parts: list[str] = []
 
     for step in routing.route:
@@ -85,7 +90,12 @@ def process_order_pipeline(
             logger.info("=== Processing %s: Printer stage ===", order_id)
             if printer_agent.equipment.status == "failed":
                 printer_agent.equipment.reset()
-            result = printer_agent.process(order_id)
+            result = printer_agent.process(
+                order_id,
+                design_description=design_description,
+                priority=priority,
+                routing_notes=routing_notes.get("printer", ""),
+            )
             bus.dispatch()
             if not result["success"]:
                 logger.error("Order %s failed at Printer", order_id)
@@ -101,7 +111,12 @@ def process_order_pipeline(
                     "error": "heat_press_failure",
                 }
             else:
-                result_hp = hp_agent.process(order_id)
+                result_hp = hp_agent.process(
+                    order_id,
+                    design_description=design_description,
+                    priority=priority,
+                    routing_notes=routing_notes.get("heat_press", ""),
+                )
             bus.dispatch()
             if not result_hp["success"]:
                 logger.error("Order %s failed at HeatPress", order_id)
@@ -138,7 +153,12 @@ def process_order_pipeline(
             logger.info("=== Processing %s: Packaging stage ===", order_id)
             if pkg_agent.equipment.status == "failed":
                 pkg_agent.equipment.reset()
-            result_pkg = pkg_agent.process(order_id)
+            result_pkg = pkg_agent.process(
+                order_id,
+                design_description=design_description,
+                priority=priority,
+                routing_notes=routing_notes.get("packaging", ""),
+            )
             bus.dispatch()
             if not result_pkg["success"]:
                 logger.error("Order %s failed at Packaging", order_id)

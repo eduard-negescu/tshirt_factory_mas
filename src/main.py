@@ -27,6 +27,9 @@ from equipment.quality_station import QualityStation
 from graph.builder import build_graph
 from graph.state import SimulationState
 from langgraph.checkpoint.postgres import PostgresSaver
+from llm.heat_press_chain import HeatPressChain
+from llm.packaging_chain import PackagingChain
+from llm.printer_chain import PrinterChain
 from llm.qc_chain import QCChain
 from llm.routing_chain import RoutingChain
 from logging_config import TraceFilter
@@ -129,13 +132,16 @@ def main() -> None:
     # --- Create LLM chains ---
     routing_chain = RoutingChain(settings)
     qc_chain = QCChain(settings)
+    printer_chain = PrinterChain(settings)
+    heat_press_chain = HeatPressChain(settings)
+    packaging_chain = PackagingChain(settings)
 
     # --- Create agents ---
     scheduler = SchedulerAgent(settings)
-    printer_agent = PrinterAgent(printer_eq)
-    hp_agent = HeatPressAgent(heat_press_eq)
+    printer_agent = PrinterAgent(printer_eq, printer_chain=printer_chain)
+    hp_agent = HeatPressAgent(heat_press_eq, heat_press_chain=heat_press_chain)
     qc_agent = QualityControlAgent(qc_eq, qc_chain=qc_chain)
-    pkg_agent = PackagingAgent(packaging_eq)
+    pkg_agent = PackagingAgent(packaging_eq, packaging_chain=packaging_chain)
 
     # --- Wire message bus ---
     bus.register("scheduler", scheduler.handle_message)
@@ -196,6 +202,9 @@ def main() -> None:
                 "chains": {
                     "routing": routing_chain,
                     "qc": qc_chain,
+                    "printer": printer_chain,
+                    "heat_press": heat_press_chain,
+                    "packaging": packaging_chain,
                 },
                 "bus": bus,
                 "scheduler_chain": scheduler.chain,
