@@ -25,9 +25,12 @@ def _log_raw_response(text) -> str:
 
 
 def _strip_json_comments(text: str) -> str:
-    """Remove // comments and trailing commas so the JSON is parseable."""
+    """Remove // comments, trailing commas, and markdown code fences so the JSON is parseable."""
     if hasattr(text, "content"):
         text = text.content
+    # Strip markdown code fences (```json ... ``` or ``` ... ```)
+    text = re.sub(r"^```(?:json)?\s*\n", "", text)
+    text = re.sub(r"\n```\s*$", "", text)
     text = re.sub(r"//.*$", "", text, flags=re.MULTILINE)
     text = re.sub(r",\s*([}\]])", r"\1", text)
     return text

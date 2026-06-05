@@ -310,18 +310,4 @@ for o in orders:
 st.dataframe(final_rows, width="stretch", hide_index=True)
 
 
-# ---------------------------------------------------------------------------
-# Entry point for `uv run ui`
-# ---------------------------------------------------------------------------
-
-
-def main() -> None:
-    """Launch Streamlit server programmatically."""
-    import streamlit.web.cli as stcli
-
-    sys.argv = ["streamlit", "run", str(__file__)]
-    sys.exit(stcli.main())
-
-
-if __name__ == "__main__":
-    main()
+# Note: entry point is `ui/_entry.py` (launched via `uv run ui`)
