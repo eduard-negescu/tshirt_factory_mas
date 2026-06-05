@@ -1,1 +1,6 @@
 .env
+__pycache__/
+*.pyc
+.playwright-mcp/
+.qwen/settings.json
+.qwen/settings.json.orig

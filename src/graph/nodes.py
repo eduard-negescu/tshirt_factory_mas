@@ -157,6 +157,8 @@ def process_order_node(
                 )
             )
             responses = bus.dispatch()
+            if responses is None:
+                responses = {}
 
             # Extract scheduler's re-plan from message response
             scheduler_responses = responses.get("scheduler", [])
@@ -287,6 +289,8 @@ def process_order_node(
                 )
             )
             responses = bus.dispatch()
+            if responses is None:
+                responses = {}
             sched_resp = responses.get("scheduler", [None])[-1]
             if sched_resp is not None:
                 result["queue"] = [order_id] + [
@@ -330,6 +334,8 @@ def process_order_node(
                 )
             )
             responses = bus.dispatch()
+            if responses is None:
+                responses = {}
             sched_resp = responses.get("scheduler", [None])[-1]
             if sched_resp is not None:
                 result["queue"] = [order_id] + [
@@ -373,6 +379,12 @@ def process_order_node(
                 )
             )
             responses = bus.dispatch()
+            if responses is None:
+                import logging
+                _log = logging.getLogger(__name__)
+                _log.error("bus.dispatch() returned None! bus=%r type=%s dispatch=%r",
+                           bus, type(bus).__name__, getattr(bus, 'dispatch', None))
+                responses = {}
             sched_resp = responses.get("scheduler", [None])[-1]
             if sched_resp is not None:
                 result["queue"] = [order_id] + [
