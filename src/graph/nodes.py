@@ -423,6 +423,7 @@ def process_order_node(
                 completed_count = state.completed_count + 1
                 result["completed_orders"] = new_completed
                 result["completed_count"] = completed_count
+                result["pipeline_result"] = "completed"  # force-complete → same as normal complete
                 print(f"  ✅ {order_id} FINALIZATĂ FORȚAT după "
                       f"{order.rework_count} refaceri "
                       f"({completed_count}/{len(state.all_orders)})")

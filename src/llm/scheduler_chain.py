@@ -38,6 +38,32 @@ def _strip_json_comments(text: str) -> str:
     return text
 
 
+def _fix_schedule_response(text: str) -> str:
+    """Coerce malformed LLM output into the expected ScheduleResponse shape.
+
+    The LLM occasionally returns a JSON array of pending-order objects instead
+    of the expected {schedule: [...], reason: "..."} object.  Detect that case
+    and extract just the IDs.
+    """
+    if hasattr(text, "content"):
+        text = text.content
+    try:
+        data = json.loads(text)
+    except (json.JSONDecodeError, TypeError):
+        return text  # let the downstream parser try (and probably fail)
+
+    if isinstance(data, list):
+        ids = [
+            item["id"] if isinstance(item, dict) else str(item)
+            for item in data
+        ]
+        fixed = {"schedule": ids, "reason": "LLM returned list format; extracted IDs from raw output."}
+        logger.debug("Coerced list response into ScheduleResponse shape: %s", fixed)
+        return json.dumps(fixed)
+
+    return text
+
+
 SYSTEM_PROMPT = """Ești un planificator de producție pentru un atelier de personalizare tricouri.
 
 Atelierul are patru stații în secvență:
@@ -53,9 +79,13 @@ Reguli:
 - Comenzile respinse de QualityControl trebuie reinserate
   în program pentru reprocesare.
 
-Returnează un obiect JSON cu:
+Returnează UN SINGUR OBIECT JSON (NU un array) cu exact aceste două câmpuri:
 - "schedule": o listă simplă de string-uri cu ID-urile comenzilor (ex. ["O-001", "O-003", "O-002"])
 - "reason": un singur string cu o scurtă explicație a deciziilor de planificare
+
+ATENȚIE: Răspunsul trebuie să fie un obiect, NU un array de obiecte.
+Format corect: {{"schedule": ["O-001"], "reason": "..."}}
+Format GRESIT: [{{"id": "O-001", "priority": "URGENT"}}]
 """
 
 HUMAN_TEMPLATE = """Starea curentă a echipamentelor:
@@ -110,7 +140,7 @@ class SchedulerChain:
                 ("human", HUMAN_TEMPLATE),
             ]
         )
-        self._chain = self._prompt | self._llm | RunnableLambda(_log_raw_response) | RunnableLambda(_strip_json_comments) | self._parser
+        self._chain = self._prompt | self._llm | RunnableLambda(_log_raw_response) | RunnableLambda(_strip_json_comments) | RunnableLambda(_fix_schedule_response) | self._parser
 
     def invoke(
         self,
